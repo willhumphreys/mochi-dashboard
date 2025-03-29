@@ -1,13 +1,12 @@
 // src/Dashboard.tsx
-import { ReactNode } from 'react';
+import { ReactNode, memo } from 'react';
 
 interface DashboardProps {
     tableComponent: ReactNode;
     visualizationComponent: ReactNode;
 }
 
-const Dashboard = ({tableComponent, visualizationComponent }: DashboardProps) => {
-
+const Dashboard = memo(({ tableComponent, visualizationComponent }: DashboardProps) => {
     return (
         <div className="dashboard-container">
             <div className="data-container">
@@ -16,6 +15,6 @@ const Dashboard = ({tableComponent, visualizationComponent }: DashboardProps) =>
             </div>
         </div>
     );
-};
+});
 
 export default Dashboard;

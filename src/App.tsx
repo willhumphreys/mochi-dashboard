@@ -4,6 +4,7 @@ import './App.css';
 import MergedTable from "./MergedTable";
 import StrategyVisualization from "./StrategyVisualization";
 import Dashboard from "./Dashboard";
+import DashboardTitle from "./DashboardTitle";
 import { MergedData } from "./types";
 
 function App() {
@@ -15,7 +16,7 @@ function App() {
 
     return (
         <div className="App">
-            <h1 className="dashboard-title">Strategy Performance Dashboard</h1>
+            <DashboardTitle title="Strategy Performance Dashboard" />
             <Dashboard
                 tableComponent={<MergedTable onRowSelect={handleStrategySelect} />}
                 visualizationComponent={<StrategyVisualization selectedStrategy={selectedStrategy} />}
