@@ -1,10 +1,13 @@
+// src/MergedTable.tsx
 import { useEffect, useState } from "react";
 import Papa from "papaparse";
 import { FilteredSetupRow, AggregatedSummaryRow, MergedData } from "./types";
+import GraphDisplay from "./GraphDisplay";
 
 const MergedTable = () => {
     const [mergedData, setMergedData] = useState<MergedData[]>([]);
     const [selectedGraph, setSelectedGraph] = useState<string | null>(null);
+    const [selectedRow, setSelectedRow] = useState<MergedData | null>(null);
 
     useEffect(() => {
         const loadAndMergeData = async () => {
@@ -57,57 +60,60 @@ const MergedTable = () => {
 
     // Handle row click to set the selected graph
     const handleRowClick = (row: MergedData) => {
-        const symbol = 'AAPL_polygon_min'
+        const symbol = 'AAPL_polygon_min';
         const graphName = `${symbol}_${row.Scenario}_${row.TraderID}.png`;
         setSelectedGraph(graphName);
+        setSelectedRow(row);
     };
 
     return (
-        <div>
+        <div className="dashboard-container">
             <h1>Merged Data Table</h1>
-            <table border={1}>
-                <thead>
-                <tr>
-                    <th>Rank</th>
-                    <th>Scenario</th>
-                    <th>TraderID</th>
-                    <th>TotalProfit</th>
-                    <th>TradeCount</th>
-                    <th>BestTrade</th>
-                    <th>WorstTrade</th>
-                    <th>ProfitStdDev</th>
-                    <th>WinCount</th>
-                    <th>LoseCount</th>
-                    <th>AverageNetProfit</th>
-                    <th>MaxDrawdown</th>
-                    <th>MaxProfit</th>
-                    <th>ProfitFactor</th>
-                    <th>CompositeScore</th>
-                    <th>RiskRewardBalance</th>
-                </tr>
-                </thead>
-                <tbody>
-                {mergedData.map((row, index) => (
-                    <tr key={index} onClick={() => handleRowClick(row)} style={{ cursor: "pointer" }}>
-                        {Object.values(row).map((value, idx) => (
-                            <td key={idx}>{value}</td>
+            <div className="data-container">
+                <div className="table-container">
+                    <table border={1}>
+                        <thead>
+                        <tr>
+                            <th>Rank</th>
+                            <th>Scenario</th>
+                            <th>TraderID</th>
+                            <th>TotalProfit</th>
+                            <th>TradeCount</th>
+                            <th>BestTrade</th>
+                            <th>WorstTrade</th>
+                            <th>ProfitStdDev</th>
+                            <th>WinCount</th>
+                            <th>LoseCount</th>
+                            <th>AverageNetProfit</th>
+                            <th>MaxDrawdown</th>
+                            <th>MaxProfit</th>
+                            <th>ProfitFactor</th>
+                            <th>CompositeScore</th>
+                            <th>RiskRewardBalance</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {mergedData.map((row, index) => (
+                            <tr
+                                key={index}
+                                onClick={() => handleRowClick(row)}
+                                style={{
+                                    cursor: "pointer",
+                                    backgroundColor: selectedRow && selectedRow.Rank === row.Rank ? "#e6f7ff" : "inherit"
+                                }}
+                            >
+                                {Object.values(row).map((value, idx) => (
+                                    <td key={idx}>{value}</td>
+                                ))}
+                            </tr>
                         ))}
-                    </tr>
-                ))}
-                </tbody>
-            </table>
-
-            {/* Display the selected graph */}
-            {selectedGraph && (
-                <div style={{ marginTop: "20px" }}>
-                    <h2>Selected Graph:</h2>
-                    <img
-                        src={`/graphs/${selectedGraph}`}
-                        alt={`Graph for ${selectedGraph}`}
-                        style={{ maxWidth: "100%", height: "auto" }}
-                    />
+                        </tbody>
+                    </table>
                 </div>
-            )}
+                <div className="graph-section">
+                    <GraphDisplay selectedGraph={selectedGraph} selectedRow={selectedRow} />
+                </div>
+            </div>
         </div>
     );
 };
