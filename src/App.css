@@ -1,6 +1,58 @@
+.App {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+/* Make the dashboard container use full width */
+.dashboard-container {
+  width: 100%;
+  max-width: 100%;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+
+/* Ensure data container takes full width */
+.data-container {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Make table container use full width */
+.table-container {
+  width: 100%;
+  overflow-x: auto; /* Add horizontal scrolling for tables if needed */
+}
+
+/* Make tables take full width */
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+/* Update the global styles to ensure full width layout */
+body, html {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* If you have any fixed width constraints, remove them */
+/* For responsive design, consider media queries for different screen sizes */
+@media (max-width: 768px) {
+  .dashboard-container {
+    padding: 10px;
+  }
+}
+
 #root {
-  max-width: 1280px;
-  margin: 0 auto;
+  width: 100%;
+  max-width: 100%;  /* Remove the 1280px limit */
+  margin: 0;        /* Remove auto margins that center the content */
   padding: 2rem;
   text-align: center;
 }
@@ -41,10 +93,6 @@
   color: #888;
 }
 
-.dashboard-container {
-  max-width: 100%;
-  padding: 20px;
-}
 
 .data-container {
   display: flex;
