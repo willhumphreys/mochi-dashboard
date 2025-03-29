@@ -1,9 +1,9 @@
 // src/types.ts
 
 export interface FilteredSetupRow {
-    Rank: string;
+    Rank: number;
     scenario: string;
-    traderid: string;
+    traderid: number;
     totalprofit: string;
     tradecount: string;
     besttrade: string;
@@ -12,12 +12,19 @@ export interface FilteredSetupRow {
     wincount: string;
     losecount: string;
     averagenetprofit: string;
+    dayofweek: number
+    hourofday: number
+    stop: number
+    limit: number
+    tickoffset: number
+    tradeduration: number
+    outoftime: number
 }
 
 export interface AggregatedSummaryRow {
-    Rank: string;
+    Rank: number;
     Scenario: string;
-    TraderID: string;
+    TraderID: number;
     MaxDrawdown: string;
     MaxProfit: string;
     ProfitFactor: string;
@@ -26,9 +33,9 @@ export interface AggregatedSummaryRow {
 }
 
 export interface MergedData {
-    Rank: string;
+    Rank: number;
     Scenario: string;
-    TraderID: string;
+    TraderID: number;
     TotalProfit: string;
     TradeCount: string;
     BestTrade: string;
@@ -42,4 +49,23 @@ export interface MergedData {
     ProfitFactor?: string; // Optional in case of missing data
     CompositeScore?: string; // Optional in case of missing data
     RiskRewardBalance?: string; // Optional in case of missing data
+    dayofweek: number
+    hourofday: number
+    stop: number
+    limit: number
+    tickoffset: number
+    tradeduration: number
+    outoftime: number
 }
+
+export interface TraderConfigDetails {
+    rank: number;
+    dayofweek: number;
+    hourofday: number;
+    stop: number;
+    limit: number;
+    tickoffset: number;
+    tradeduration: number;
+    outoftime: number;
+}
+

@@ -1,7 +1,7 @@
 // src/MergedTable.tsx
-import { useEffect, useState } from "react";
+import {useEffect, useState} from "react";
 import Papa from "papaparse";
-import { FilteredSetupRow, AggregatedSummaryRow, MergedData } from "./types";
+import {AggregatedSummaryRow, FilteredSetupRow, MergedData} from "./types";
 import GraphDisplay from "./GraphDisplay";
 
 const MergedTable = () => {
@@ -15,23 +15,19 @@ const MergedTable = () => {
             const filteredSetupsResponse = await fetch("/filtered-setups.csv");
             const filteredSetupsText = await filteredSetupsResponse.text();
             const filteredSetupsData = Papa.parse<FilteredSetupRow>(filteredSetupsText, {
-                header: true,
-                skipEmptyLines: true,
+                header: true, skipEmptyLines: true,
             }).data;
 
             // Load aggregated_filtered_summary.csv
             const aggregatedSummaryResponse = await fetch("/aggregated_filtered_summary.csv");
             const aggregatedSummaryText = await aggregatedSummaryResponse.text();
             const aggregatedSummaryData = Papa.parse<AggregatedSummaryRow>(aggregatedSummaryText, {
-                header: true,
-                skipEmptyLines: true,
+                header: true, skipEmptyLines: true,
             }).data;
 
-            // Merge data based on Rank column
+            // Update the data merging code in MergedTable.tsx
             const merged = filteredSetupsData.map((setupRow) => {
-                const summaryRow = aggregatedSummaryData.find(
-                    (summaryRow) => summaryRow.Rank === setupRow.Rank
-                );
+                const summaryRow = aggregatedSummaryData.find((summaryRow) => summaryRow.Rank === setupRow.Rank);
                 return {
                     Rank: setupRow.Rank,
                     Scenario: setupRow.scenario,
@@ -48,7 +44,14 @@ const MergedTable = () => {
                     MaxProfit: summaryRow?.MaxProfit || "",
                     ProfitFactor: summaryRow?.ProfitFactor || "",
                     CompositeScore: summaryRow?.CompositeScore || "",
-                    RiskRewardBalance: summaryRow?.RiskRewardBalance || "",
+                    RiskRewardBalance: summaryRow?.RiskRewardBalance || "", // Convert string values to numbers for configuration properties
+                    dayofweek: Number(setupRow?.dayofweek || 0),
+                    hourofday: Number(setupRow?.hourofday || 0),
+                    stop: Number(setupRow?.stop || 0),
+                    limit: Number(setupRow?.limit || 0),
+                    tickoffset: Number(setupRow?.tickoffset || 0),
+                    tradeduration: Number(setupRow?.tradeduration || 0),
+                    outoftime: Number(setupRow?.outoftime || 0)
                 };
             });
 
@@ -66,8 +69,7 @@ const MergedTable = () => {
         setSelectedRow(row);
     };
 
-    return (
-        <div className="dashboard-container">
+    return (<div className="dashboard-container">
             <h1>Merged Data Table</h1>
             <div className="data-container">
                 <div className="table-container">
@@ -93,8 +95,7 @@ const MergedTable = () => {
                         </tr>
                         </thead>
                         <tbody>
-                        {mergedData.map((row, index) => (
-                            <tr
+                        {mergedData.map((row, index) => (<tr
                                 key={index}
                                 onClick={() => handleRowClick(row)}
                                 style={{
@@ -102,20 +103,16 @@ const MergedTable = () => {
                                     backgroundColor: selectedRow && selectedRow.Rank === row.Rank ? "#e6f7ff" : "inherit"
                                 }}
                             >
-                                {Object.values(row).map((value, idx) => (
-                                    <td key={idx}>{value}</td>
-                                ))}
-                            </tr>
-                        ))}
+                                {Object.values(row).map((value, idx) => (<td key={idx}>{value}</td>))}
+                            </tr>))}
                         </tbody>
                     </table>
                 </div>
                 <div className="graph-section">
-                    <GraphDisplay selectedGraph={selectedGraph} selectedRow={selectedRow} />
+                    <GraphDisplay selectedGraph={selectedGraph} selectedRow={selectedRow}/>
                 </div>
             </div>
-        </div>
-    );
+        </div>);
 };
 
 export default MergedTable;

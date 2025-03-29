@@ -1,6 +1,7 @@
 // src/GraphDisplay.tsx
-import { FC } from "react";
-import { MergedData } from "./types";
+import {FC, useEffect, useState} from "react";
+import {MergedData, TraderConfigDetails} from "./types";
+import TraderDetailsTable from "./TraderConfigurationDetails";
 
 interface GraphDisplayProps {
     selectedGraph: string | null;
@@ -8,6 +9,36 @@ interface GraphDisplayProps {
 }
 
 const GraphDisplay: FC<GraphDisplayProps> = ({ selectedGraph, selectedRow }) => {
+    const [traderConfig, setTraderConfig] = useState<TraderConfigDetails | null>(null);
+
+    useEffect(() => {
+        if (!selectedRow) return;
+
+        // In a real application, you would fetch this data based on selectedRow
+        // For now, we'll simulate getting the configuration data
+        const fetchTraderConfig = async () => {
+            // Simulate API delay
+            await new Promise(resolve => setTimeout(resolve, 100));
+
+            // This would be replaced with an actual API call in a real app
+            // e.g. fetch(`/api/trader-configs/${selectedRow.Scenario}/${selectedRow.TraderID}`)
+            const config = {
+                rank: selectedRow.Rank,
+                dayofweek: selectedRow.dayofweek,
+                hourofday: selectedRow.hourofday,
+                stop: selectedRow.stop,
+                limit: selectedRow.limit,
+                tickoffset: selectedRow.tickoffset,
+                tradeduration: selectedRow.tradeduration,
+                outoftime: selectedRow.outoftime
+            };
+
+            setTraderConfig(config);
+        };
+
+        fetchTraderConfig();
+    }, [selectedRow]);
+
     if (!selectedGraph) {
         return <div className="graph-placeholder">Select a row to view the graph</div>;
     }
@@ -15,6 +46,11 @@ const GraphDisplay: FC<GraphDisplayProps> = ({ selectedGraph, selectedRow }) => 
     return (
         <div className="graph-container">
             <h2>Strategy Visualization</h2>
+            {traderConfig && (
+                <div className="trader-details-section">
+                    <TraderDetailsTable configDetails={traderConfig} />
+                </div>
+            )}
             {selectedRow && (
                 <div className="strategy-details">
                     <div className="detail-section">
@@ -117,6 +153,12 @@ const GraphDisplay: FC<GraphDisplayProps> = ({ selectedGraph, selectedRow }) => 
                     }}
                 />
             </div>
+
+            {selectedRow && !traderConfig && (
+                <div className="trader-details-section">
+                    <div className="loading-indicator">Loading trader configuration...</div>
+                </div>
+            )}
         </div>
     );
 };
