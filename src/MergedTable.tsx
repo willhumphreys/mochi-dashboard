@@ -70,49 +70,57 @@ const MergedTable = () => {
     };
 
     return (<div className="dashboard-container">
-            <h1>Merged Data Table</h1>
-            <div className="data-container">
-                <div className="table-container">
-                    <table border={1}>
-                        <thead>
-                        <tr>
-                            <th>Rank</th>
-                            <th>Scenario</th>
-                            <th>TraderID</th>
-                            <th>TotalProfit</th>
-                            <th>TradeCount</th>
-                            <th>BestTrade</th>
-                            <th>WorstTrade</th>
-                            <th>ProfitStdDev</th>
-                            <th>WinCount</th>
-                            <th>LoseCount</th>
-                            <th>AverageNetProfit</th>
-                            <th>MaxDrawdown</th>
-                            <th>MaxProfit</th>
-                            <th>ProfitFactor</th>
-                            <th>CompositeScore</th>
-                            <th>RiskRewardBalance</th>
-                        </tr>
-                        </thead>
-                        <tbody>
-                        {mergedData.map((row, index) => (<tr
-                                key={index}
-                                onClick={() => handleRowClick(row)}
-                                style={{
-                                    cursor: "pointer",
-                                    backgroundColor: selectedRow && selectedRow.Rank === row.Rank ? "#e6f7ff" : "inherit"
-                                }}
-                            >
-                                {Object.values(row).map((value, idx) => (<td key={idx}>{value}</td>))}
-                            </tr>))}
-                        </tbody>
-                    </table>
-                </div>
-                <div className="graph-section">
-                    <GraphDisplay selectedGraph={selectedGraph} selectedRow={selectedRow}/>
-                </div>
+        <h1>Merged Data Table</h1>
+        <div className="data-container">
+            <div className="table-container">
+                <table border={1}>
+                    <thead>
+                    <tr>
+                        <th>Rank</th>
+                        <th>Scenario</th>
+                        <th>TraderID</th>
+                        <th>TotalProfit</th>
+                        <th>TradeCount</th>
+                        <th>BestTrade</th>
+                        <th>WorstTrade</th>
+                        <th>ProfitStdDev</th>
+                        <th>WinCount</th>
+                        <th>LoseCount</th>
+                        <th>AverageNetProfit</th>
+                        <th>MaxDrawdown</th>
+                        <th>MaxProfit</th>
+                        <th>ProfitFactor</th>
+                        <th>CompositeScore</th>
+                        <th>RiskRewardBalance</th>
+                        <th>Rank</th>
+                        <th>Day of Week</th>
+                        <th>Hour of Day</th>
+                        <th>Stop</th>
+                        <th>Limit</th>
+                        <th>Tick Offset</th>
+                        <th>Trade Duration</th>
+                        <th>Out of Time</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {mergedData.map((row, index) => (<tr
+                        key={index}
+                        onClick={() => handleRowClick(row)}
+                        style={{
+                            cursor: "pointer",
+                            backgroundColor: selectedRow && selectedRow.Rank === row.Rank ? "#e6f7ff" : "inherit"
+                        }}
+                    >
+                        {Object.values(row).map((value, idx) => (<td key={idx}>{value}</td>))}
+                    </tr>))}
+                    </tbody>
+                </table>
             </div>
-        </div>);
+            <div className="graph-section">
+                <GraphDisplay selectedGraph={selectedGraph} selectedRow={selectedRow}/>
+            </div>
+        </div>
+    </div>);
 };
 
 export default MergedTable;
