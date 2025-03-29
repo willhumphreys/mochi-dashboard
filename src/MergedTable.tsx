@@ -1,14 +1,20 @@
 // src/MergedTable.tsx
-import {useEffect, useState} from "react";
+import { useEffect, useState } from "react";
 import Papa from "papaparse";
-import {AggregatedSummaryRow, FilteredSetupRow, MergedData} from "./types";
+import { AggregatedSummaryRow, FilteredSetupRow, MergedData } from "./types";
 
 interface MergedTableProps {
     onRowSelect: (row: MergedData) => void;
 }
 
-const MergedTable = ({onRowSelect}: MergedTableProps) => {
+const MergedTable = ({ onRowSelect }: MergedTableProps) => {
     const [mergedData, setMergedData] = useState<MergedData[]>([]);
+
+    const handleRowClick = (row: MergedData) => {
+        onRowSelect(row);
+    };
+
+
 
     useEffect(() => {
         const loadAndMergeData = async () => {
@@ -62,11 +68,6 @@ const MergedTable = ({onRowSelect}: MergedTableProps) => {
         loadAndMergeData();
     }, []);
 
-    // Handle row click to pass data to parent
-    const handleRowClick = (row: MergedData) => {
-        onRowSelect(row);
-    };
-
     return (
         <div className="table-container">
             <table border={1}>
@@ -80,7 +81,6 @@ const MergedTable = ({onRowSelect}: MergedTableProps) => {
                     <th>BestTrade</th>
                     <th>WorstTrade</th>
                     <th>ProfitStdDev</th>
-                    {/* Add other headers as needed */}
                 </tr>
                 </thead>
                 <tbody>
@@ -94,7 +94,6 @@ const MergedTable = ({onRowSelect}: MergedTableProps) => {
                         <td>{row.BestTrade}</td>
                         <td>{row.WorstTrade}</td>
                         <td>{row.ProfitStdDev}</td>
-                        {/* Add other cells as needed */}
                     </tr>
                 ))}
                 </tbody>

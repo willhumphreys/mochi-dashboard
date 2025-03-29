@@ -1,5 +1,5 @@
 // src/App.tsx
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import './App.css';
 import MergedTable from "./MergedTable";
 import StrategyVisualization from "./StrategyVisualization";
@@ -9,14 +9,14 @@ import { MergedData } from "./types";
 function App() {
     const [selectedStrategy, setSelectedStrategy] = useState<MergedData | null>(null);
 
-    const handleStrategySelect = (row: MergedData) => {
+    const handleStrategySelect = useCallback((row: MergedData) => {
         setSelectedStrategy(row);
-    };
+    }, []);
 
     return (
         <div className="App">
+            <h1 className="dashboard-title">Strategy Performance Dashboard</h1>
             <Dashboard
-                title="Strategy Performance Dashboard"
                 tableComponent={<MergedTable onRowSelect={handleStrategySelect} />}
                 visualizationComponent={<StrategyVisualization selectedStrategy={selectedStrategy} />}
             />
