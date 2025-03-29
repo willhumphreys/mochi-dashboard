@@ -16,11 +16,18 @@ function App() {
 
     return (
         <div className="App">
-            <DashboardTitle title="Strategy Performance Dashboard" />
-            <Dashboard
-                tableComponent={<MergedTable onRowSelect={handleStrategySelect} />}
-                visualizationComponent={<StrategyVisualization selectedStrategy={selectedStrategy} />}
-            />
+            {/* Container to ensure title stays fixed */}
+            <div className="app-header">
+                <DashboardTitle title="Strategy Performance Dashboard" />
+            </div>
+
+            {/* Main content container */}
+            <div className="app-content">
+                <Dashboard
+                    tableComponent={<MergedTable onRowSelect={handleStrategySelect} />}
+                    visualizationComponent={<StrategyVisualization selectedStrategy={selectedStrategy} />}
+                />
+            </div>
         </div>
     );
 }

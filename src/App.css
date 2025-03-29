@@ -176,3 +176,34 @@ tr:hover {
   }
 }
 
+/* Add to App.css */
+.App {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+.app-header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background-color: #fff;
+  padding: 10px 0;
+  border-bottom: 1px solid #eee;
+}
+
+.app-content {
+  flex: 1;
+  overflow: auto;
+  padding: 20px;
+}
+
+.dashboard-title {
+  margin: 0;
+  padding: 0 20px;
+}
+
+.dashboard-container {
+  width: 100%;
+}
+
