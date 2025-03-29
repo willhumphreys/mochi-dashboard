@@ -2,12 +2,13 @@
 import {useEffect, useState} from "react";
 import Papa from "papaparse";
 import {AggregatedSummaryRow, FilteredSetupRow, MergedData} from "./types";
-import GraphDisplay from "./GraphDisplay";
 
-const MergedTable = () => {
+interface MergedTableProps {
+    onRowSelect: (row: MergedData) => void;
+}
+
+const MergedTable = ({onRowSelect}: MergedTableProps) => {
     const [mergedData, setMergedData] = useState<MergedData[]>([]);
-    const [selectedGraph, setSelectedGraph] = useState<string | null>(null);
-    const [selectedRow, setSelectedRow] = useState<MergedData | null>(null);
 
     useEffect(() => {
         const loadAndMergeData = async () => {
@@ -25,7 +26,7 @@ const MergedTable = () => {
                 header: true, skipEmptyLines: true,
             }).data;
 
-            // Update the data merging code in MergedTable.tsx
+            // Update the data merging code
             const merged = filteredSetupsData.map((setupRow) => {
                 const summaryRow = aggregatedSummaryData.find((summaryRow) => summaryRow.Rank === setupRow.Rank);
                 return {
@@ -44,7 +45,7 @@ const MergedTable = () => {
                     MaxProfit: summaryRow?.MaxProfit || "",
                     ProfitFactor: summaryRow?.ProfitFactor || "",
                     CompositeScore: summaryRow?.CompositeScore || "",
-                    RiskRewardBalance: summaryRow?.RiskRewardBalance || "", // Convert string values to numbers for configuration properties
+                    RiskRewardBalance: summaryRow?.RiskRewardBalance || "",
                     dayofweek: Number(setupRow?.dayofweek || 0),
                     hourofday: Number(setupRow?.hourofday || 0),
                     stop: Number(setupRow?.stop || 0),
@@ -61,66 +62,45 @@ const MergedTable = () => {
         loadAndMergeData();
     }, []);
 
-    // Handle row click to set the selected graph
+    // Handle row click to pass data to parent
     const handleRowClick = (row: MergedData) => {
-        const symbol = 'AAPL_polygon_min';
-        const graphName = `${symbol}_${row.Scenario}_${row.TraderID}.png`;
-        setSelectedGraph(graphName);
-        setSelectedRow(row);
+        onRowSelect(row);
     };
 
-    return (<div className="dashboard-container">
-        <h1>Merged Data Table</h1>
-        <div className="data-container">
-            <div className="table-container">
-                <table border={1}>
-                    <thead>
-                    <tr>
-                        <th>Rank</th>
-                        <th>Scenario</th>
-                        <th>TraderID</th>
-                        <th>TotalProfit</th>
-                        <th>TradeCount</th>
-                        <th>BestTrade</th>
-                        <th>WorstTrade</th>
-                        <th>ProfitStdDev</th>
-                        <th>WinCount</th>
-                        <th>LoseCount</th>
-                        <th>AverageNetProfit</th>
-                        <th>MaxDrawdown</th>
-                        <th>MaxProfit</th>
-                        <th>ProfitFactor</th>
-                        <th>CompositeScore</th>
-                        <th>RiskRewardBalance</th>
-                        <th>Rank</th>
-                        <th>Day of Week</th>
-                        <th>Hour of Day</th>
-                        <th>Stop</th>
-                        <th>Limit</th>
-                        <th>Tick Offset</th>
-                        <th>Trade Duration</th>
-                        <th>Out of Time</th>
+    return (
+        <div className="table-container">
+            <table border={1}>
+                <thead>
+                <tr>
+                    <th>Rank</th>
+                    <th>Scenario</th>
+                    <th>TraderID</th>
+                    <th>TotalProfit</th>
+                    <th>TradeCount</th>
+                    <th>BestTrade</th>
+                    <th>WorstTrade</th>
+                    <th>ProfitStdDev</th>
+                    {/* Add other headers as needed */}
+                </tr>
+                </thead>
+                <tbody>
+                {mergedData.map((row) => (
+                    <tr key={row.Rank} onClick={() => handleRowClick(row)}>
+                        <td>{row.Rank}</td>
+                        <td>{row.Scenario}</td>
+                        <td>{row.TraderID}</td>
+                        <td>{row.TotalProfit}</td>
+                        <td>{row.TradeCount}</td>
+                        <td>{row.BestTrade}</td>
+                        <td>{row.WorstTrade}</td>
+                        <td>{row.ProfitStdDev}</td>
+                        {/* Add other cells as needed */}
                     </tr>
-                    </thead>
-                    <tbody>
-                    {mergedData.map((row, index) => (<tr
-                        key={index}
-                        onClick={() => handleRowClick(row)}
-                        style={{
-                            cursor: "pointer",
-                            backgroundColor: selectedRow && selectedRow.Rank === row.Rank ? "#e6f7ff" : "inherit"
-                        }}
-                    >
-                        {Object.values(row).map((value, idx) => (<td key={idx}>{value}</td>))}
-                    </tr>))}
-                    </tbody>
-                </table>
-            </div>
-            <div className="graph-section">
-                <GraphDisplay selectedGraph={selectedGraph} selectedRow={selectedRow}/>
-            </div>
+                ))}
+                </tbody>
+            </table>
         </div>
-    </div>);
+    );
 };
 
 export default MergedTable;
