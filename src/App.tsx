@@ -16,12 +16,10 @@ function App() {
 
     return (
         <div className="App">
-            {/* Container to ensure title stays fixed */}
             <div className="app-header">
                 <DashboardTitle title="Strategy Performance Dashboard" />
             </div>
 
-            {/* Main content container */}
             <div className="app-content">
                 <Dashboard
                     tableComponent={<MergedTable onRowSelect={handleStrategySelect} />}
