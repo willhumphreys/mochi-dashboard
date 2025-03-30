@@ -246,3 +246,44 @@ tr:hover {
   max-width: 100%;
   box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
+
+/* Add this to your CSS file or style section */
+
+.dashboard-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+}
+
+.data-container {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+  gap: 20px;
+}
+
+/* Table styles */
+.table-container {
+  flex: 0 0 40%; /* Fixed width for the table - adjust percentage as needed */
+  overflow: auto;
+  min-width: 300px; /* Ensure table has a minimum width */
+}
+
+/* Visualization styles */
+.strategy-visualization {
+  flex: 1; /* Take remaining space */
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.image-container {
+  overflow: auto;
+  max-height: 80vh;
+}
+
+.image-container img {
+  max-width: 100%;
+  height: auto;
+}
