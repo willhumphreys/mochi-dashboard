@@ -75,7 +75,7 @@ export interface FilteredSetupRow {
     max_drawdown: number;
     profitColumn: number;
     hourDay: number;
-    Symbol: number;
+    Symbol: string;
 }
 
 
@@ -148,7 +148,7 @@ export interface MergedData{
     max_drawdown: number;
     profitColumn: number;
     hourDay: number;
-    Symbol: number;
+    Symbol: string;
 }
 
 
