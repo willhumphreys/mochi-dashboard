@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
-import { MergedData } from "./types";
+import { MergedData, TraderConfigDetails } from "./types";
 import { getS3ImageUrl, getDirectS3Url } from "./services/S3Service";
+import TraderDetailsTable from "./TraderConfigurationDetails";
 
 interface StrategyVisualizationProps {
     selectedStrategy: MergedData | null;
@@ -11,6 +12,21 @@ const StrategyVisualization = ({ selectedStrategy }: StrategyVisualizationProps)
     const [loading, setLoading] = useState<boolean>(false);
     const [error, setError] = useState<string | null>(null);
     const [usedDirectUrl, setUsedDirectUrl] = useState<boolean>(false);
+
+    // Add state for trader configuration
+    const [traderConfig, setTraderConfig] = useState<TraderConfigDetails>({
+        rank: 0,
+        dayofweek: 0,
+        hourofday: 0,
+        stop: 0,
+        limit: 0,
+        tickoffset: 0,
+        tradeduration: 0,
+        outoftime: 0
+    });
+
+    // Add loading state for trader config
+    const [configLoading, setConfigLoading] = useState<boolean>(false);
 
     useEffect(() => {
         // Reset state when strategy changes
@@ -59,6 +75,35 @@ const StrategyVisualization = ({ selectedStrategy }: StrategyVisualizationProps)
         };
 
         loadImage();
+
+        // Add logic to fetch trader configuration
+        const fetchTraderConfig = async () => {
+            if (!selectedStrategy) return;
+
+            setConfigLoading(true);
+            try {
+                // In a real application, you would fetch this data from an API
+                // For now, we'll use the data from the selectedStrategy
+                const config: TraderConfigDetails = {
+                    rank: selectedStrategy.Rank,
+                    dayofweek: selectedStrategy.dayofweek || 0,
+                    hourofday: selectedStrategy.hourofday || 0,
+                    stop: selectedStrategy.stop || 0,
+                    limit: selectedStrategy.limit || 0,
+                    tickoffset: selectedStrategy.tickoffset || 0,
+                    tradeduration: selectedStrategy.tradeduration || 0,
+                    outoftime: selectedStrategy.outoftime || 0
+                };
+
+                setTraderConfig(config);
+            } catch (err) {
+                console.error("Failed to fetch trader configuration:", err);
+            } finally {
+                setConfigLoading(false);
+            }
+        };
+
+        fetchTraderConfig();
     }, [selectedStrategy]);
 
     // Function to construct the S3 key from selected strategy
@@ -68,7 +113,7 @@ const StrategyVisualization = ({ selectedStrategy }: StrategyVisualizationProps)
         }
 
         // Extract the symbol
-        const symbol = strategy.Symbol || 'AAPL_polygon_min';
+        const symbol = strategy.Symbol + '_polygon_min';
 
         const scenarioString = strategy.Scenario;
 
@@ -97,6 +142,15 @@ const StrategyVisualization = ({ selectedStrategy }: StrategyVisualizationProps)
         <div className="strategy-visualization">
             <h3>Strategy Visualization</h3>
 
+            {/* Add TraderConfigurationDetails component */}
+            <div className="trader-details-section">
+                {configLoading ? (
+                    <div className="loading-indicator">Loading trader configuration...</div>
+                ) : (
+                    <TraderDetailsTable configDetails={traderConfig} />
+                )}
+            </div>
+
             {loading && <div className="loading">Loading visualization...</div>}
 
             {error && (
@@ -117,9 +171,9 @@ const StrategyVisualization = ({ selectedStrategy }: StrategyVisualizationProps)
 
             <div className="strategy-details">
                 <h4>Details for Strategy {selectedStrategy.Scenario} (Trader {selectedStrategy.TraderID})</h4>
-                <p>Total Profit: {selectedStrategy.TotalProfit}</p>
-                <p>Trade Count: {selectedStrategy.TradeCount}</p>
-                <p>Win/Loss: {selectedStrategy.WinCount}/{selectedStrategy.LoseCount}</p>
+                <p>Total Profit: {selectedStrategy.totalprofit}</p>
+                <p>Trade Count: {selectedStrategy.tradecount}</p>
+                <p>Win/Loss: {selectedStrategy.wincount}/{selectedStrategy.losecount}</p>
                 {selectedStrategy.ProfitFactor && <p>Profit Factor: {selectedStrategy.ProfitFactor}</p>}
                 {selectedStrategy.MaxDrawdown && <p>Max Drawdown: {selectedStrategy.MaxDrawdown}</p>}
             </div>
