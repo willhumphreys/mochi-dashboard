@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { MergedData, TraderConfigDetails } from "./types";
 import { getS3ImageUrl, getDirectS3Url } from "./services/S3Service";
+import { TradesTable } from "./TradesTable";
 
 interface StrategyVisualizationProps {
     selectedStrategy: MergedData | null;
@@ -8,6 +9,7 @@ interface StrategyVisualizationProps {
 
 const StrategyVisualization = ({ selectedStrategy }: StrategyVisualizationProps) => {
     const [imageUrl, setImageUrl] = useState<string | null>(null);
+    const [tradesUrl, setTradesUrl] = useState<string | null>(null);
     const [loading, setLoading] = useState<boolean>(false);
     const [error, setError] = useState<string | null>(null);
     const [usedDirectUrl, setUsedDirectUrl] = useState<boolean>(false);
@@ -65,6 +67,7 @@ const StrategyVisualization = ({ selectedStrategy }: StrategyVisualizationProps)
     useEffect(() => {
         // Reset state when strategy changes
         setImageUrl(null);
+        setTradesUrl(null);
         setLoading(false);
         setError(null);
         setUsedDirectUrl(false);
@@ -73,42 +76,54 @@ const StrategyVisualization = ({ selectedStrategy }: StrategyVisualizationProps)
             return;
         }
 
-        const loadImage = async () => {
+        const loadData = async () => {
             try {
                 setLoading(true);
                 setError(null);
 
-                // Construct the S3 key based on selectedStrategy
-                const key = constructS3Key(selectedStrategy);
-
-                if (!key) {
-                    throw new Error("Unable to construct valid S3 key from selected strategy");
+                // Load graph image
+                const graphKey = constructGraphS3Key(selectedStrategy);
+                if (graphKey) {
+                    console.log("Constructed graph S3 key:", graphKey);
+                    try {
+                        // First try with pre-signed URL
+                        const url = await getS3ImageUrl(graphKey);
+                        setImageUrl(url);
+                    } catch (presignError) {
+                        console.error("Failed to get pre-signed URL:", presignError);
+                        // Fallback: Try direct URL if pre-signed URL fails
+                        console.log("Falling back to direct S3 URL...");
+                        const directUrl = getDirectS3Url(graphKey);
+                        setImageUrl(directUrl);
+                        setUsedDirectUrl(true);
+                    }
                 }
 
-                console.log("Constructed S3 key:", key);
-
-                try {
-                    // First try with pre-signed URL
-                    const url = await getS3ImageUrl(key);
-                    setImageUrl(url);
-                } catch (presignError) {
-                    console.error("Failed to get pre-signed URL:", presignError);
-
-                    // Fallback: Try direct URL if pre-signed URL fails
-                    console.log("Falling back to direct S3 URL...");
-                    const directUrl = getDirectS3Url(key);
-                    setImageUrl(directUrl);
-                    setUsedDirectUrl(true);
+                // Load trades CSV
+                const tradesKey = constructTradeS3Key(selectedStrategy);
+                if (tradesKey) {
+                    console.log("Constructed trades S3 key:", tradesKey);
+                    try {
+                        // First try with pre-signed URL
+                        const url = await getS3ImageUrl(tradesKey);
+                        setTradesUrl(url);
+                    } catch (presignError) {
+                        console.error("Failed to get pre-signed URL for trades:", presignError);
+                        // Fallback: Try direct URL if pre-signed URL fails
+                        console.log("Falling back to direct S3 URL for trades...");
+                        const directUrl = getDirectS3Url(tradesKey);
+                        setTradesUrl(directUrl);
+                    }
                 }
             } catch (err) {
-                console.error("Failed to load strategy image:", err);
+                console.error("Failed to load strategy data:", err);
                 setError(err instanceof Error ? err.message : "Unknown error");
             } finally {
                 setLoading(false);
             }
         };
 
-        loadImage();
+        loadData();
 
         // Add logic to fetch trader configuration
         const fetchTraderConfig = async () => {
@@ -138,7 +153,7 @@ const StrategyVisualization = ({ selectedStrategy }: StrategyVisualizationProps)
     }, [selectedStrategy]);
 
     // Function to construct the S3 key from selected strategy
-    const constructS3Key = (strategy: MergedData): string => {
+    const constructGraphS3Key = (strategy: MergedData): string => {
         if (!strategy) {
             return "";
         }
@@ -155,6 +170,26 @@ const StrategyVisualization = ({ selectedStrategy }: StrategyVisualizationProps)
     if (!selectedStrategy) {
         return <div className="strategy-placeholder">Select a strategy to view details</div>;
     }
+
+    // Function to construct the S3 key from selected strategy
+    const constructTradeS3Key = (strategy: MergedData): string => {
+        if (!strategy) {
+            return "";
+        }
+
+        // Extract the symbol
+        const symbol = strategy.Symbol + '_polygon_min';
+
+        const scenarioString = strategy.Scenario;
+
+        // Construct the final key format: symbol/graphs/symbol_scenarioString_traderID.png
+        return `${symbol}/trades/${symbol}_${scenarioString}_${strategy.TraderID}.csv`;
+    };
+
+    if (!selectedStrategy) {
+        return <div className="strategy-placeholder">Select a strategy to view details</div>;
+    }
+
 
     return (
         <div className="strategy-visualization">
@@ -449,6 +484,9 @@ const StrategyVisualization = ({ selectedStrategy }: StrategyVisualizationProps)
                         )}
                     </div>
                 )}
+
+                {tradesUrl && <TradesTable tradesUrl={tradesUrl} />}
+
             </div>
         </div>
     );
