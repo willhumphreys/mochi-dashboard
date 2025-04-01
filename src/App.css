@@ -452,3 +452,118 @@ tr:hover {
 .profit-negative {
   color: red;
 }
+
+/* Add these styles for the StockTreeView component */
+.stock-tree-view {
+  width: 100%;
+  overflow: auto;
+}
+
+.tree-container {
+  margin-top: 1rem;
+}
+
+.stock-item {
+  margin-bottom: 0.5rem;
+}
+
+.stock-header {
+  padding: 0.5rem;
+  background-color: #f0f0f0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  font-weight: bold;
+}
+
+.stock-header:hover {
+  background-color: #e0e0e0;
+}
+
+.expander {
+  margin-right: 0.5rem;
+}
+
+.stock-data-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 0.5rem;
+}
+
+.stock-data-table th, .stock-data-table td {
+  border: 1px solid #ddd;
+  padding: 0.5rem;
+  text-align: left;
+}
+
+.stock-data-table tbody tr:hover {
+  background-color: #f5f5f5;
+  cursor: pointer;
+}
+
+.no-data {
+  padding: 1rem;
+  margin-left: 1rem;
+}
+
+/* Update these styles for the StockTreeView component */
+.stock-tree-view {
+  width: 15%;     /* Limit width to 15% */
+  min-width: 180px; /* Add a minimum width for usability */
+  overflow: auto;  /* Enable scrolling when needed */
+  max-height: 100%; /* Ensure it doesn't extend beyond container height */
+  border-right: 1px solid #ddd; /* Add a separator */
+}
+
+.tree-container {
+  margin-top: 1rem;
+  overflow-x: auto; /* Horizontal scrolling if needed */
+}
+
+.stock-item {
+  margin-bottom: 0.5rem;
+}
+
+.stock-header {
+  padding: 0.5rem;
+  background-color: #f0f0f0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  font-weight: bold;
+  white-space: nowrap; /* Prevent wrapping of symbol names */
+}
+
+.stock-header:hover {
+  background-color: #e0e0e0;
+}
+
+.expander {
+  margin-right: 0.5rem;
+}
+
+.stock-data-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 0.5rem;
+  table-layout: fixed; /* Fixed table layout */
+}
+
+.stock-data-table th, .stock-data-table td {
+  border: 1px solid #ddd;
+  padding: 0.5rem;
+  text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.stock-data-table tbody tr:hover {
+  background-color: #f5f5f5;
+  cursor: pointer;
+}
+
+.no-data {
+  padding: 1rem;
+  margin-left: 1rem;
+}

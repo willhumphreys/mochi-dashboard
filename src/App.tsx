@@ -1,7 +1,7 @@
 // src/App.tsx
 import { useState, useCallback } from 'react';
 import './App.css';
-import MergedTable from "./MergedTable";
+import StockTreeView from "./StockTreeView";
 import StrategyVisualization from "./StrategyVisualization";
 import Dashboard from "./Dashboard";
 import DashboardTitle from "./DashboardTitle";
@@ -22,7 +22,7 @@ function App() {
 
             <div className="app-content">
                 <Dashboard
-                    tableComponent={<MergedTable onRowSelect={handleStrategySelect} />}
+                    tableComponent={<StockTreeView onRowSelect={handleStrategySelect} />}
                     visualizationComponent={<StrategyVisualization selectedStrategy={selectedStrategy} />}
                 />
             </div>
