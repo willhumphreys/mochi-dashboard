@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import Papa from "papaparse";
 import { AggregatedSummaryRow, FilteredSetupRow, MergedData } from "./types";
-import { getDirectS3Url, getS3ImageUrl } from "./services/S3Service";
+import { getDirectS3Url, getS3ImageUrl, fetchStockSymbols } from "./services/S3Service";
 
 interface StockTreeViewProps {
   onRowSelect: (row: MergedData) => void;
@@ -16,25 +16,50 @@ interface StockData {
   error: string | null;
 }
 
-const STOCK_SYMBOLS = ["AAPL", "GOOG"]; // You can add more symbols here
-
 const StockTreeView = ({ onRowSelect }: StockTreeViewProps) => {
   const [stocksData, setStocksData] = useState<Record<string, StockData>>({});
+  const [isLoadingSymbols, setIsLoadingSymbols] = useState(true);
+  const [symbolsError, setSymbolsError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Initialize the stocks data structure
-    const initialStocksData: Record<string, StockData> = {};
-    STOCK_SYMBOLS.forEach(symbol => {
-      initialStocksData[symbol] = {
-        symbol,
-        isExpanded: false,
-        data: [],
-        isLoading: false,
-        error: null
-      };
-    });
+    // Fetch available stock symbols from S3 bucket using the service
+    const initializeStockData = async () => {
+      try {
+        setIsLoadingSymbols(true);
+        setSymbolsError(null);
 
-    setStocksData(initialStocksData);
+        const stockSymbols = await fetchStockSymbols();
+
+        console.log("Available stock symbols:", stockSymbols);
+
+        if (stockSymbols.length === 0) {
+          setSymbolsError("No stock symbols found in the bucket");
+          return;
+        }
+
+        // Initialize the stocks data structure with fetched symbols
+        const initialStocksData: Record<string, StockData> = {};
+        stockSymbols.forEach(symbol => {
+          initialStocksData[symbol] = {
+            symbol,
+            isExpanded: false,
+            data: [],
+            isLoading: false,
+            error: null
+          };
+        });
+
+        setStocksData(initialStocksData);
+
+      } catch (error) {
+        console.error("Error initializing stock data:", error);
+        setSymbolsError(error instanceof Error ? error.message : String(error));
+      } finally {
+        setIsLoadingSymbols(false);
+      }
+    };
+
+    initializeStockData();
   }, []);
 
   const toggleSymbol = async (symbol: string) => {
@@ -66,17 +91,8 @@ const StockTreeView = ({ onRowSelect }: StockTreeViewProps) => {
       }));
 
       // Define the S3 paths for the CSV files based on the symbol
-      let filteredSetupsKey: string;
-      let aggregatedSummaryKey: string;
-
-      if (symbol === "AAPL") {
-        filteredSetupsKey = `${symbol}_polygon_min/filtered-setups.csv`;
-        aggregatedSummaryKey = `${symbol}_polygon_min/aggregated_filtered_summary.csv`;
-      } else {
-        // For other symbols like GOOG, use the appropriate path
-        filteredSetupsKey = `${symbol}_polygon_min/filtered-setups.csv`;
-        aggregatedSummaryKey = `${symbol}_polygon_min/aggregated_filtered_summary.csv`;
-      }
+      const filteredSetupsKey = `${symbol}_polygon_min/filtered-setups.csv`;
+      const aggregatedSummaryKey = `${symbol}_polygon_min/aggregated_filtered_summary.csv`;
 
       // Get URLs for both CSV files
       let filteredSetupsUrl: string;
@@ -197,7 +213,7 @@ const StockTreeView = ({ onRowSelect }: StockTreeViewProps) => {
           profitColumn: setupRow.profitColumn,
           hourDay: setupRow.hourDay
 
-        }as MergedData;
+        } as MergedData;
       });
 
       // Update state with the loaded data
@@ -230,6 +246,15 @@ const StockTreeView = ({ onRowSelect }: StockTreeViewProps) => {
   return (
       <div className="stock-tree-view">
         <h2>Stock Data</h2>
+
+        {isLoadingSymbols && (
+            <div className="loading-indicator">Loading stock symbols...</div>
+        )}
+
+        {symbolsError && (
+            <div className="error-message">Error loading symbols: {symbolsError}</div>
+        )}
+
         <div className="tree-container">
           {Object.values(stocksData).map((stockData) => (
               <div key={stockData.symbol} className="stock-item">
