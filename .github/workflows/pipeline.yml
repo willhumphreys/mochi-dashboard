@@ -32,13 +32,6 @@ jobs:
       - name: Build
         run: npm run build
 
-      - name: Check for CSV files in public directory
-        run: |
-          if [ ! -f "public/filtered-setups.csv" ] || [ ! -f "public/aggregated_filtered_summary.csv" ]; then
-            echo "Warning: CSV files not found in public directory. The app may not function correctly."
-          fi
-        continue-on-error: true
-
       # Optional: Add testing if you have tests configured
       # - name: Test
       #   run: npm test
@@ -48,23 +41,3 @@ jobs:
         with:
           name: dist
           path: dist/
-
-  # Optional: Deploy to GitHub Pages
-  deploy:
-    needs: build
-    if: github.ref == 'refs/heads/master'
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Download build artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: dist
-          path: dist
-
-      - name: Deploy to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v4
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./dist
-          publish_branch: gh-pages

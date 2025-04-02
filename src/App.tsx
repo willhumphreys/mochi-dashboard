@@ -25,7 +25,7 @@ function App() {
     return (
         <div className="App">
             <div className="app-header">
-                <DashboardTitle title="Strategy Performance Dashboard" />
+                <DashboardTitle title="Strategy Performance Dashboard 1" />
             </div>
 
             <div className="app-content">
