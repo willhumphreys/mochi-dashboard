@@ -12,11 +12,11 @@
     "isolatedModules": true,
     "moduleDetection": "force",
 
-    /* Add this line */
+    /* Composite project settings */
     "composite": true,
 
-    /* Remove or set to false */
-    "noEmit": false,
+    /* Instead of noEmit: false, use emitDeclarationOnly */
+    "emitDeclarationOnly": true,
 
     /* Linting */
     "strict": true,
