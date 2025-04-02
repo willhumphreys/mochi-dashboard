@@ -1,10 +1,9 @@
 // src/AuthContext.tsx
 import { Amplify } from 'aws-amplify';
-import { signOut, fetchAuthSession, getCurrentUser } from 'aws-amplify/auth';
+// Remove handleRedirectResult from this import
+import { signOut, fetchAuthSession, getCurrentUser, signInWithRedirect } from 'aws-amplify/auth';
 import amplifyConfig from './config/amplify-config';
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { signInWithRedirect } from 'aws-amplify/auth';
-
 
 // Initialize Amplify with your configuration
 Amplify.configure(amplifyConfig);
@@ -13,7 +12,7 @@ Amplify.configure(amplifyConfig);
 type AuthUser = {
   username: string;
   userId: string;
-  attributes?: Record<string, unknown>;
+  attributes?: Record<string, unknown>; // Keep attributes optional as per potential return type
 } | null;
 
 interface AuthContextType {
@@ -21,7 +20,7 @@ interface AuthContextType {
   isLoading: boolean;
   user: AuthUser;
   signIn: () => void;
-  signOut: () => void;
+  signOut: () => Promise<void>; // Make signOut return a promise for potential async cleanup
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -29,7 +28,7 @@ const AuthContext = createContext<AuthContextType>({
   isLoading: true,
   user: null,
   signIn: () => {},
-  signOut: () => {}
+  signOut: async () => {} // Default async function
 });
 
 export const useAuth = () => {
@@ -49,66 +48,82 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [isLoading, setIsLoading] = useState(true);
   const [user, setUser] = useState<AuthUser>(null);
 
+  // This single useEffect runs once on mount
   useEffect(() => {
-    // Check current authentication status on component mount
+    // Check current authentication status on component mount.
+    // If the app is loading after a redirect from Cognito,
+    // fetchAuthSession/getCurrentUser will implicitly handle the code exchange.
+    const checkAuthState = async () => {
+      try {
+        console.log('Starting auth check...');
+        setIsLoading(true); // Ensure loading is true at the start
+
+        console.log('Fetching auth session...');
+        // This call implicitly handles the redirect result if applicable
+        const authSession = await fetchAuthSession();
+        console.log('Auth session result:', authSession);
+
+        // Check if tokens exist (indicating successful session)
+        const authenticated = authSession.tokens !== undefined;
+        setIsAuthenticated(authenticated);
+        console.log('Authentication state set:', authenticated);
+
+        if (authenticated) {
+          console.log('Getting current user...');
+          // getCurrentUser might also trigger handling, but fetchAuthSession is often sufficient
+          const currentUser = await getCurrentUser();
+          console.log('Current user result:', currentUser);
+          setUser(currentUser);
+        } else {
+          // If not authenticated, ensure user state is null
+          setUser(null);
+        }
+
+      } catch (error) {
+        // An error here often means the user is not authenticated
+        console.warn('Auth check error (likely indicates no session):', error);
+        setUser(null);
+        setIsAuthenticated(false);
+      } finally {
+        setIsLoading(false);
+        console.log('Auth check completed, loading state set to false');
+      }
+    };
+
     checkAuthState();
-  }, []);
 
-  const checkAuthState = async () => {
-    try {
-      console.log('Starting auth check...');
-      setIsLoading(true);
-
-      console.log('Fetching auth session...');
-      const authSession = await fetchAuthSession();
-      console.log('Auth session result:', authSession);
-
-      console.log('Getting current user...');
-      const currentUser = await getCurrentUser();
-      console.log('Current user result:', currentUser);
-
-      setUser(currentUser);
-      setIsAuthenticated(authSession.tokens !== undefined);
-      console.log('Authentication state set:', authSession.tokens !== undefined);
-    } catch (error) {
-      console.error('Auth check error:', error);
-      setUser(null);
-      setIsAuthenticated(false);
-    } finally {
-      setIsLoading(false);
-      console.log('Auth check completed, loading state set to false');
-    }
-  };
-
-  const handleSignIn = () => {
-    // Using the new API for federated sign-in
-    signInWithRedirect();
-
-  };
-
-  useEffect(() => {
-    // Check current authentication status on component mount
-    checkAuthState();
-
-    // Fallback timeout to prevent infinite loading
+    // Optional: Fallback timeout remains a reasonable safeguard
     const timeoutId = setTimeout(() => {
       if (isLoading) {
         console.warn('Auth check timeout - forcing loading state to false');
         setIsLoading(false);
+        // Decide the default state on timeout, usually not authenticated
         setIsAuthenticated(false);
+        setUser(null);
       }
     }, 10000); // 10 seconds timeout
 
     return () => clearTimeout(timeoutId);
-  }, []);
+  }, []); // Empty dependency array ensures this runs only once on mount
+
+  const handleSignIn = () => {
+    // Using the new API for federated sign-in
+    // No need to await this, it navigates the user away
+    signInWithRedirect();
+  };
+
+  // Removed the handleRedirect function as it's not needed
 
   const handleSignOut = async () => {
     try {
+      setIsLoading(true); // Optionally set loading during sign out
       await signOut();
       setUser(null);
       setIsAuthenticated(false);
     } catch (error) {
       console.error('Error signing out: ', error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
