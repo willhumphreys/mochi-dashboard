@@ -56,17 +56,27 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
   const checkAuthState = async () => {
     try {
+      console.log('Starting auth check...');
       setIsLoading(true);
-      // Using the new API
+
+      console.log('Fetching auth session...');
       const authSession = await fetchAuthSession();
+      console.log('Auth session result:', authSession);
+
+      console.log('Getting current user...');
       const currentUser = await getCurrentUser();
+      console.log('Current user result:', currentUser);
+
       setUser(currentUser);
       setIsAuthenticated(authSession.tokens !== undefined);
-    } catch {
+      console.log('Authentication state set:', authSession.tokens !== undefined);
+    } catch (error) {
+      console.error('Auth check error:', error);
       setUser(null);
       setIsAuthenticated(false);
     } finally {
       setIsLoading(false);
+      console.log('Auth check completed, loading state set to false');
     }
   };
 
@@ -75,6 +85,22 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     signInWithRedirect();
 
   };
+
+  useEffect(() => {
+    // Check current authentication status on component mount
+    checkAuthState();
+
+    // Fallback timeout to prevent infinite loading
+    const timeoutId = setTimeout(() => {
+      if (isLoading) {
+        console.warn('Auth check timeout - forcing loading state to false');
+        setIsLoading(false);
+        setIsAuthenticated(false);
+      }
+    }, 10000); // 10 seconds timeout
+
+    return () => clearTimeout(timeoutId);
+  }, []);
 
   const handleSignOut = async () => {
     try {

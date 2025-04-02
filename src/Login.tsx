@@ -1,21 +1,25 @@
 // src/Login.tsx
+import React from 'react';
 import { useAuth } from './AuthContext';
-import './App.css';
 
-function Login() {
+const Login: React.FC = () => {
     const { signIn } = useAuth();
 
     return (
         <div className="login-container">
-            <div className="login-box">
-                <h1>Mochi Dashboard</h1>
-                <p>You need to sign in to access the dashboard</p>
-                <button className="login-button" onClick={signIn}>
-                    Sign in with Cognito
-                </button>
-            </div>
+            <h1>Welcome to Strategy Performance Dashboard</h1>
+            <p>Please sign in to continue</p>
+            <button
+                onClick={() => {
+                    console.log('Sign in button clicked');
+                    signIn();
+                }}
+                className="sign-in-button"
+            >
+                Sign In
+            </button>
         </div>
     );
-}
+};
 
 export default Login;
