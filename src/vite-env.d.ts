@@ -12,8 +12,6 @@ interface ImportMetaEnv {
     readonly VITE_AWS_SECRET_ACCESS_KEY: string;
     readonly VITE_AWS_REGION: string;
     readonly VITE_AWS_SESSION_TOKEN: string;
-
-    // Added Cognito identity pool
     readonly VITE_COGNITO_IDENTITY_POOL_ID: string;
 }
 
