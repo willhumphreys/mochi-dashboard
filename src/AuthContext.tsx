@@ -1,9 +1,8 @@
 // src/AuthContext.tsx
 import { Amplify } from 'aws-amplify';
-// Remove handleRedirectResult from this import
 import { signOut, fetchAuthSession, getCurrentUser, signInWithRedirect } from 'aws-amplify/auth';
 import amplifyConfig from './config/amplify-config';
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, ReactNode, useRef } from 'react';
 
 // Initialize Amplify with your configuration
 Amplify.configure(amplifyConfig);
@@ -47,6 +46,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [user, setUser] = useState<AuthUser>(null);
+  // Create a ref to track loading state that won't have closure issues
+  const isLoadingRef = useRef(true);
 
   // This single useEffect runs once on mount
   useEffect(() => {
@@ -57,6 +58,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       try {
         console.log('Starting auth check...');
         setIsLoading(true); // Ensure loading is true at the start
+        isLoadingRef.current = true;
 
         console.log('Fetching auth session...');
         // This call implicitly handles the redirect result if applicable
@@ -86,6 +88,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         setIsAuthenticated(false);
       } finally {
         setIsLoading(false);
+        isLoadingRef.current = false; // Update ref when loading completes
         console.log('Auth check completed, loading state set to false');
       }
     };
@@ -94,16 +97,18 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
     // Optional: Fallback timeout remains a reasonable safeguard
     const timeoutId = setTimeout(() => {
-      if (isLoading) {
-        console.warn('Auth check timeout - forcing loading state to false');
+      if (isLoadingRef.current) {
+        console.warn('Auth check timeout - ending loading state only');
         setIsLoading(false);
-        // Decide the default state on timeout, usually not authenticated
-        setIsAuthenticated(false);
-        setUser(null);
+        // Don't change authentication state on timeout
+        // This allows UI to respond even if auth check is slow
       }
     }, 10000); // 10 seconds timeout
 
-    return () => clearTimeout(timeoutId);
+    return () => {
+      clearTimeout(timeoutId);
+      isLoadingRef.current = false; // Prevent timeout from executing during cleanup
+    };
   }, []); // Empty dependency array ensures this runs only once on mount
 
   const handleSignIn = () => {
@@ -112,22 +117,18 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     signInWithRedirect();
   };
 
-  // Removed the handleRedirect function as it's not needed
-
   const handleSignOut = async () => {
     try {
-      setIsLoading(true); // Optionally set loading during sign out
       await signOut();
-      setUser(null);
       setIsAuthenticated(false);
+      setUser(null);
     } catch (error) {
-      console.error('Error signing out: ', error);
-    } finally {
-      setIsLoading(false);
+      console.error('Error signing out:', error);
     }
   };
 
-  const value: AuthContextType = {
+  // Context value to provide to consumers
+  const contextValue: AuthContextType = {
     isAuthenticated,
     isLoading,
     user,
@@ -135,5 +136,11 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     signOut: handleSignOut
   };
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+      <AuthContext.Provider value={contextValue}>
+        {children}
+      </AuthContext.Provider>
+  );
 };
+
+export default AuthContext;
