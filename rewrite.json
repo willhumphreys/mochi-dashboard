@@ -1,0 +1,14 @@
+
+[
+
+  {
+
+    "source": "/api/backtest",
+
+    "target": "https://6a3jgki3ul.execute-api.eu-central-1.amazonaws.com/prod/backtest",
+
+    "status": 200
+
+  }
+
+]
