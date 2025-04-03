@@ -7,6 +7,7 @@ import StrategyVisualization from "./StrategyVisualization";
 import Dashboard from "./Dashboard";
 import DashboardTitle from "./DashboardTitle";
 import MergedTable from "./MergedTable";
+import BacktestRequest from './BacktestRequest'; // Import the new component
 import { MergedData } from "./types";
 import Login from './Login';
 
@@ -15,6 +16,7 @@ function App() {
     type User = { attributes?: { email?: string } };
     const [selectedStrategy, setSelectedStrategy] = useState<MergedData | null>(null);
     const [selectedSymbol, setSelectedSymbol] = useState<string | null>(null);
+    const [showBacktestForm, setShowBacktestForm] = useState<boolean>(false); // State to toggle backtest form
 
     const handleStrategySelect = useCallback((row: MergedData) => {
         setSelectedStrategy(row);
@@ -44,6 +46,21 @@ function App() {
                     <span>Welcome, {(user as User).attributes?.email || 'User'}</span>
                     <button onClick={signOut} className="sign-out-button">Sign Out</button>
                 </div>
+            </div>
+
+            {/* Backtest section */}
+            <div className="backtest-section">
+                <div className="backtest-header">
+                    <h2>Backtest Tools</h2>
+                    <button
+                        onClick={() => setShowBacktestForm(!showBacktestForm)}
+                        className="toggle-backtest-button"
+                    >
+                        {showBacktestForm ? 'Hide Backtest Form' : 'Show Backtest Form'}
+                    </button>
+                </div>
+
+                {showBacktestForm && <BacktestRequest />}
             </div>
 
             <div className="app-content">
