@@ -68,8 +68,9 @@ const BacktestRequest: React.FC = () => {
             }
 
             // Make the backtest API request
+            // Change this line in your handleSubmit function
             const response = await fetch(
-                'https://6a3jgki3ul.execute-api.eu-central-1.amazonaws.com/prod/backtest',
+                '/api/backtest', // Changed URL to use the proxy
                 {
                     method: 'POST',
                     headers: {
@@ -79,6 +80,7 @@ const BacktestRequest: React.FC = () => {
                     body: JSON.stringify(params)
                 }
             );
+
 
             const data = await response.json();
 
