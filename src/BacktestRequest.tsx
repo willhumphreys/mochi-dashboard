@@ -22,11 +22,22 @@ interface BacktestErrorResponse {
 
 const BacktestRequest: React.FC = () => {
     const { isAuthenticated, isLoading } = useAuth();
+    // Get today's date and format it as YYYY-MM-DD
+    const today = new Date();
+    const formattedToday = today.toISOString().split('T')[0];
+
+    // Calculate date 5 years ago minus 1 day
+    const fiveYearsAgo = new Date();
+    fiveYearsAgo.setFullYear(fiveYearsAgo.getFullYear() - 5);
+    fiveYearsAgo.setDate(fiveYearsAgo.getDate() - 1);
+    const formattedFromDate = fiveYearsAgo.toISOString().split('T')[0];
+
     const [params, setParams] = useState<BacktestParams>({
         ticker: 'TSLA',
-        from_date: '2020-04-01',
-        to_date: '2023-03-28'
+        from_date: formattedFromDate,
+        to_date: formattedToday
     });
+
     const [result, setResult] = useState<BacktestSuccessResponse | null>(null);
     const [loading, setLoading] = useState<boolean>(false);
     const [error, setError] = useState<string | null>(null);
