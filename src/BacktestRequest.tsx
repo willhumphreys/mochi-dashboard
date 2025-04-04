@@ -29,7 +29,7 @@ const BacktestRequest: React.FC = () => {
     // Calculate date 5 years ago minus 1 day
     const fiveYearsAgo = new Date();
     fiveYearsAgo.setFullYear(fiveYearsAgo.getFullYear() - 5);
-    fiveYearsAgo.setDate(fiveYearsAgo.getDate() - 1);
+    fiveYearsAgo.setDate(fiveYearsAgo.getDate() + 1);
     const formattedFromDate = fiveYearsAgo.toISOString().split('T')[0];
 
     const [params, setParams] = useState<BacktestParams>({
