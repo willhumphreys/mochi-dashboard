@@ -1,14 +1,18 @@
-import { GetObjectCommand, ListObjectsV2Command, S3Client } from "@aws-sdk/client-s3";
-import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
-import { fromCognitoIdentityPool } from "@aws-sdk/credential-providers";
-import { fetchAuthSession } from 'aws-amplify/auth';
-// Import the AWS credential type for type safety
-import type { AwsCredentialIdentity } from "@aws-sdk/types";
+import {GetObjectCommand, ListObjectsV2Command, S3Client} from "@aws-sdk/client-s3";
+import {fromCognitoIdentityPool} from "@aws-sdk/credential-providers";
+import {fetchAuthSession} from 'aws-amplify/auth';
+import Papa from "papaparse";
+import type {AwsCredentialIdentity} from "@aws-sdk/types";
+import {TradeData} from "../types.ts";
+import {getSignedUrl} from "@aws-sdk/s3-request-presigner";
 
 // Region and Pool IDs from environment variables
 const AWS_REGION = import.meta.env.VITE_REGION;
 const COGNITO_IDENTITY_POOL_ID = import.meta.env.VITE_COGNITO_IDENTITY_POOL_ID;
 const COGNITO_USER_POOL_ID = import.meta.env.VITE_USER_POOL_ID;
+
+const BUCKET_NAME = "mochi-prod-final-trader-ranking"; // Ensure this is correct
+
 
 // Validate required environment variables
 if (!AWS_REGION || !COGNITO_IDENTITY_POOL_ID || !COGNITO_USER_POOL_ID) {
@@ -18,8 +22,6 @@ if (!AWS_REGION || !COGNITO_IDENTITY_POOL_ID || !COGNITO_USER_POOL_ID) {
     !COGNITO_USER_POOL_ID && "VITE_COGNITO_USER_POOL_ID"
   ].filter(Boolean).join(", ");
   console.error(`S3 Service Error: Missing required environment variables: ${missing}`);
-  // Throw an error or use default/fallback values if appropriate,
-  // but relying on missing env variables will likely cause runtime failures.
   throw new Error(`Missing required environment variables: ${missing}`);
 }
 
@@ -34,29 +36,20 @@ const dynamicCognitoCredentialsProvider = async (): Promise<AwsCredentialIdentit
   console.log("S3 Service: dynamicCognitoCredentialsProvider - Attempting to fetch credentials...");
   try {
     // 1. Fetch the Amplify Auth Session
-    const session = await fetchAuthSession({ forceRefresh: false }); // Consider forceRefresh strategy
+    const session = await fetchAuthSession({ forceRefresh: false });
     const idToken = session.tokens?.idToken?.toString();
 
     // 2. Check if we got an ID Token
     if (!idToken) {
       console.error("S3 Service: No Cognito ID Token found in session. Cannot authenticate with Identity Pool.");
-      // Handle appropriately - throw error if auth is strictly required
       throw new Error("User is not authenticated or session is invalid. Cannot retrieve AWS credentials.");
-      // Or, if unauthenticated access via Identity Pool is configured and intended:
-      // console.warn("S3 Service: Proceeding without authentication token for Identity Pool.");
-      // const unauthProvider = fromCognitoIdentityPool({
-      //   clientConfig: { region: AWS_REGION },
-      //   identityPoolId: COGNITO_IDENTITY_POOL_ID,
-      //   // No logins map provided for unauthenticated role
-      // });
-      // return unauthProvider();
     }
 
-    // 3. Create the Cognito Identity Pool provider configuration *with the current token*
+    // 3. Create the Cognito Identity Pool provider configuration with the current token
     const cognitoProviderConfig = {
       clientConfig: { region: AWS_REGION },
       identityPoolId: COGNITO_IDENTITY_POOL_ID,
-      logins: { // Provide the freshly fetched token in the 'logins' map
+      logins: {
         [USER_POOL_PROVIDER_ID]: idToken
       }
     };
@@ -66,13 +59,12 @@ const dynamicCognitoCredentialsProvider = async (): Promise<AwsCredentialIdentit
 
     // 5. Invoke the provider function to fetch AWS credentials
     console.log("S3 Service: Fetching credentials from Cognito Identity Pool with ID token.");
-    const credentials = await cognitoProvider(); // This makes the call to Cognito Identity service
+    const credentials = await cognitoProvider();
     console.log("S3 Service: Credentials successfully obtained.");
     return credentials;
 
   } catch (error) {
     console.error("S3 Service: Failed to get credentials via dynamic provider:", error);
-    // Re-throw the error to ensure the S3 operation fails clearly
     throw error;
   }
 };
@@ -83,12 +75,193 @@ const s3Client = new S3Client({
   credentials: dynamicCognitoCredentialsProvider
 });
 
-// --- Rest of your S3Service functions remain unchanged ---
+/**
+ * Lists all objects (keys) in the specified S3 bucket
+ * @param bucketName - Name of the S3 bucket
+ * @param prefix - Optional prefix to filter objects (defaults to empty string)
+ * @returns Promise that resolves to an array of object keys
+ */
+export const listAllKeys = async (
+    bucketName: string,
+    prefix: string = ''
+): Promise<string[]> => {
+  try {
+    console.log(`Listing all keys in bucket: ${bucketName}${prefix ? ` with prefix: ${prefix}` : ''}`);
 
-// Base bucket name
-const BUCKET_NAME = "mochi-prod-final-trader-ranking"; // Ensure this is correct
+    let allKeys: string[] = [];
+    let continuationToken: string | undefined = undefined;
 
-// Function to get a pre-signed URL for an S3 object
+    // S3 returns results in pages, so we need to loop until we get all keys
+    do {
+      const command: ListObjectsV2Command = new ListObjectsV2Command({
+        Bucket: bucketName,
+        Prefix: prefix,
+        ContinuationToken: continuationToken
+      });
+
+      const response = await s3Client.send(command);
+
+      // Add the keys from this page to our result array
+      if (response.Contents) {
+        const keys = response.Contents.map(obj => obj.Key).filter((key): key is string => key !== undefined);
+        allKeys = [...allKeys, ...keys];
+      }
+
+      // Check if there are more results to fetch
+      continuationToken = response.NextContinuationToken;
+
+    } while (continuationToken);
+
+    console.log(`Retrieved ${allKeys.length} keys from bucket ${bucketName}`);
+    return allKeys;
+
+  } catch (error) {
+    console.error(`Error listing keys in bucket ${bucketName}:`, error);
+    throw new Error(`Failed to list keys: ${error instanceof Error ? error.message : String(error)}`);
+  }
+};
+
+/**
+ * Reads and parses a CSV file from S3
+ * @param bucketName - Name of the S3 bucket
+ * @param key - Object key (file path) in the bucket
+ * @returns Promise that resolves to an array of parsed trade data
+ */
+export const readCsvFromS3 = async <T = TradeData>(
+    bucketName: string,
+    key: string
+): Promise<T[]> => {
+  try {
+    console.log(`Reading CSV file from bucket: ${bucketName}, key: ${key}`);
+
+    // Create the command to get the object
+    const command = new GetObjectCommand({
+      Bucket: bucketName,
+      Key: key
+    });
+
+    // Fetch the object from S3
+    const response = await s3Client.send(command);
+
+    if (!response.Body) {
+      throw new Error('No content in S3 response');
+    }
+
+    // Convert the response body to text
+    const csvContent = await response.Body.transformToString();
+
+// Parse the CSV data using Papa Parse
+    return new Promise<T[]>((resolve, reject) => {
+      Papa.parse<T>(csvContent, {
+        header: true,
+        dynamicTyping: true, // Automatically convert numeric values
+        skipEmptyLines: true,
+        complete: (results) => {
+          if (results.errors && results.errors.length > 0) {
+            console.warn('CSV parsing completed with errors:', results.errors);
+          }
+          resolve(results.data);
+        },
+        error: (error: Error) => {
+          reject(new Error(`CSV parsing error: ${error.message}`));
+        }
+      });
+    });
+
+  } catch (error) {
+    console.error(`Error reading CSV from ${bucketName}/${key}:`, error);
+    throw new Error(`Failed to read CSV: ${error instanceof Error ? error.message : String(error)}`);
+  }
+};
+
+/**
+ * Read CSV data from the mochi-prod-live-trades bucket
+ * @param symbol - Stock symbol (e.g., 'AAPL')
+ * @returns Promise that resolves to an array of trade data
+ */
+export const fetchLiveTradesForSymbol = async (symbol: string): Promise<TradeData[]> => {
+  try {
+    const bucketName = 'mochi-prod-live-trades';
+    const key = `${symbol}.csv`;
+
+    console.log(`Fetching live trades for ${symbol} from bucket ${bucketName}`);
+
+    // Create the command to get the object
+    const command = new GetObjectCommand({
+      Bucket: bucketName,
+      Key: key
+    });
+
+    // Fetch the object from S3
+    const response = await s3Client.send(command);
+
+    if (!response.Body) {
+      throw new Error('No content in S3 response');
+    }
+
+    // Convert the response body to text
+    const csvContent = await response.Body.transformToString();
+
+    // Parse the CSV data using Papa Parse
+    return new Promise<TradeData[]>((resolve, reject) => {
+      Papa.parse<TradeData>(csvContent, {
+        header: true,
+        dynamicTyping: true,
+        skipEmptyLines: true,
+        complete: (results) => {
+          if (results.errors && results.errors.length > 0) {
+            console.warn('CSV parsing completed with errors:', results.errors);
+          }
+          resolve(results.data);
+        },
+        error: (error: Error) => {
+          reject(new Error(`CSV parsing error: ${error.message}`));
+        }
+      });
+    });
+
+  } catch (error) {
+    console.error(`Error fetching live trades for ${symbol}:`, error);
+    throw new Error(`Failed to fetch live trades: ${error instanceof Error ? error.message : String(error)}`);
+  }
+};
+
+/**
+ * Gets all available stock symbols in the live trades bucket
+ * @returns Promise that resolves to an array of symbols (without .csv extension)
+ */
+export const getLiveTradeSymbols = async (): Promise<string[]> => {
+  try {
+    const bucketName = 'mochi-prod-live-trades';
+
+    console.log(`Listing objects in bucket: ${bucketName}`);
+
+    const command = new ListObjectsV2Command({
+      Bucket: bucketName
+    });
+
+    const response = await s3Client.send(command);
+
+    if (!response.Contents) {
+      return [];
+    }
+
+    // Filter for CSV files and extract the symbol name
+    const symbols = response.Contents
+        .map(obj => obj.Key)
+        .filter((key): key is string => !!key && key.endsWith('.csv'))
+        .map(key => key.replace('.csv', ''));
+
+    console.log(`Found ${symbols.length} symbols in bucket ${bucketName}`);
+    return symbols;
+
+  } catch (error) {
+    console.error('Error getting live trade symbols:', error);
+    throw new Error(`Failed to get live trade symbols: ${error instanceof Error ? error.message : String(error)}`);
+  }
+};
+
+
 export const getS3ImageUrl = async (key: string): Promise<string> => {
   // Input validation (optional but recommended)
   if (!key) {
@@ -171,3 +344,4 @@ export const fetchStockSymbols = async (): Promise<string[]> => {
     throw new Error(`Failed to fetch stock symbols: ${error instanceof Error ? error.message : String(error)}`);
   }
 };
+

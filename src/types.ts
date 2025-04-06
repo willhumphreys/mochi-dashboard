@@ -163,3 +163,19 @@ export interface TraderConfigDetails {
     outoftime: number;
 }
 
+/**
+ * Interface for trade data from CSV files
+ */
+export interface TradeData {
+    id?: string;
+    traderid: number;
+    dayofweek: string;
+    hourofday: string;
+    stop: number;
+    limit: number;
+    tickoffset: number;
+    tradeduration: number;
+    outoftime: number;
+
+    [key: string]: any; // Allow additional fields
+}

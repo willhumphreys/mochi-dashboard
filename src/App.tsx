@@ -7,7 +7,8 @@ import StrategyVisualization from "./StrategyVisualization";
 import Dashboard from "./Dashboard";
 import DashboardTitle from "./DashboardTitle";
 import MergedTable from "./MergedTable";
-import BacktestRequest from './BacktestRequest'; // Import the new component
+import BacktestRequest from './BacktestRequest';
+import LiveTradesViewer from './LiveTradesViewer'; // Import the LiveTradesViewer component
 import { MergedData } from "./types";
 import Login from './Login';
 
@@ -16,7 +17,8 @@ function App() {
     type User = { attributes?: { email?: string } };
     const [selectedStrategy, setSelectedStrategy] = useState<MergedData | null>(null);
     const [selectedSymbol, setSelectedSymbol] = useState<string | null>(null);
-    const [showBacktestForm, setShowBacktestForm] = useState<boolean>(false); // State to toggle backtest form
+    const [showBacktestForm, setShowBacktestForm] = useState<boolean>(false);
+    const [showLiveTrades, setShowLiveTrades] = useState<boolean>(false); // State to toggle live trades view
 
     const handleStrategySelect = useCallback((row: MergedData) => {
         setSelectedStrategy(row);
@@ -26,6 +28,11 @@ function App() {
         setSelectedSymbol(symbol);
         // Clear selected strategy when just a symbol is selected
         setSelectedStrategy(null);
+    }, []);
+
+    const handleLiveTradeSymbolChange = useCallback((symbol: string) => {
+        console.log(`Live trades symbol changed to: ${symbol}`);
+        // You can add additional handling here if needed
     }, []);
 
     // Show loading state
@@ -48,19 +55,31 @@ function App() {
                 </div>
             </div>
 
-            {/* Backtest section */}
-            <div className="backtest-section">
-                <div className="backtest-header">
-                    <h2>Backtest Tools</h2>
-                    <button
-                        onClick={() => setShowBacktestForm(!showBacktestForm)}
-                        className="toggle-backtest-button"
-                    >
-                        {showBacktestForm ? 'Hide Backtest Form' : 'Show Backtest Form'}
-                    </button>
+            {/* Tools section with both backtest and live trades toggles */}
+            <div className="tools-section">
+                <div className="tools-header">
+                    <h2>Trading Tools</h2>
+                    <div className="tools-buttons">
+                        <button
+                            onClick={() => setShowBacktestForm(!showBacktestForm)}
+                            className="toggle-button"
+                        >
+                            {showBacktestForm ? 'Hide Backtest Form' : 'Show Backtest Form'}
+                        </button>
+                        <button
+                            onClick={() => setShowLiveTrades(!showLiveTrades)}
+                            className="toggle-button"
+                        >
+                            {showLiveTrades ? 'Hide Live Trades' : 'Show Live Trades'}
+                        </button>
+                    </div>
                 </div>
 
                 {showBacktestForm && <BacktestRequest />}
+                {showLiveTrades && <LiveTradesViewer
+                    initialSymbol={selectedSymbol || 'AAPL'}
+                    onSymbolChange={handleLiveTradeSymbolChange}
+                />}
             </div>
 
             <div className="app-content">
