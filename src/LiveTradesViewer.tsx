@@ -4,7 +4,8 @@ import { fetchLiveTradesForSymbol } from './services/S3Service';
 import { TradeData } from "./types";
 import SymbolSelector from './SymbolSelector';
 import TradeSummary from './TradeSummary';
-import {TradesTable} from "./LiveTradesTable.tsx";
+import { TradesTable } from "./LiveTradesTable.tsx";
+import AddTradeForm from './AddTradeForm';
 
 interface LiveTradesViewerProps {
   initialSymbol?: string;
@@ -19,6 +20,10 @@ export const LiveTradesViewer: React.FC<LiveTradesViewerProps> = ({
   const [tradeData, setTradeData] = useState<TradeData[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+
+  const handleTradeAdded = (newTrade: TradeData) => {
+    setTradeData(prevTrades => [...prevTrades, newTrade]);
+  };
 
   // Fetch trade data when symbol changes
   useEffect(() => {
@@ -59,6 +64,12 @@ export const LiveTradesViewer: React.FC<LiveTradesViewerProps> = ({
               onSymbolChange={handleSymbolChange}
               disabled={loading}
           />
+
+          <AddTradeForm
+              symbol={symbol}
+              onTradeAdded={handleTradeAdded}
+          />
+
 
           {loading && <div className="loading">Loading trade data...</div>}
           {error && <div className="error">{error}</div>}

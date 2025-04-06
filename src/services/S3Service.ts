@@ -1,4 +1,4 @@
-import {GetObjectCommand, ListObjectsV2Command, S3Client} from "@aws-sdk/client-s3";
+import {GetObjectCommand, ListObjectsV2Command, PutObjectCommand, S3Client} from "@aws-sdk/client-s3";
 import {fromCognitoIdentityPool} from "@aws-sdk/credential-providers";
 import {fetchAuthSession} from 'aws-amplify/auth';
 import Papa from "papaparse";
@@ -12,6 +12,7 @@ const COGNITO_IDENTITY_POOL_ID = import.meta.env.VITE_COGNITO_IDENTITY_POOL_ID;
 const COGNITO_USER_POOL_ID = import.meta.env.VITE_USER_POOL_ID;
 
 const BUCKET_NAME = "mochi-prod-final-trader-ranking"; // Ensure this is correct
+const LIVE_TRADES_BUCKET_NAME = "mochi-prod-live-trades"; // Ensure this is correct
 
 
 // Validate required environment variables
@@ -181,14 +182,14 @@ export const readCsvFromS3 = async <T = TradeData>(
  */
 export const fetchLiveTradesForSymbol = async (symbol: string): Promise<TradeData[]> => {
   try {
-    const bucketName = 'mochi-prod-live-trades';
+
     const key = `${symbol}.csv`;
 
-    console.log(`Fetching live trades for ${symbol} from bucket ${bucketName}`);
+    console.log(`Fetching live trades for ${symbol} from bucket ${LIVE_TRADES_BUCKET_NAME}`);
 
     // Create the command to get the object
     const command = new GetObjectCommand({
-      Bucket: bucketName,
+      Bucket: LIVE_TRADES_BUCKET_NAME,
       Key: key
     });
 
@@ -342,6 +343,49 @@ export const fetchStockSymbols = async (): Promise<string[]> => {
   } catch (error) {
     console.error("Error fetching stock symbols from S3:", error);
     throw new Error(`Failed to fetch stock symbols: ${error instanceof Error ? error.message : String(error)}`);
+  }
+};
+
+// Add this function to S3Service.ts
+
+/**
+ * Adds a new trade to the specified symbol's trade file
+ * @param symbol - The trading symbol (e.g., 'AAPL')
+ * @param newTrade - The trade data to add
+ * @returns Promise that resolves when the trade is successfully added
+ */
+export const addTradeForSymbol = async (
+    symbol: string,
+    newTrade: TradeData
+): Promise<boolean> => {
+  try {
+    console.log(`Adding new trade for symbol: ${symbol}`);
+
+    // 1. Fetch current trades
+    const currentTrades = await fetchLiveTradesForSymbol(symbol);
+
+    // 2. Add the new trade
+    const updatedTrades = [...currentTrades, newTrade];
+
+    // 3. Convert back to CSV
+    const csv = Papa.unparse(updatedTrades);
+
+    // 4. Upload to S3
+    const key = `${symbol}.csv`;
+
+    const putCommand = new PutObjectCommand({
+      Bucket: LIVE_TRADES_BUCKET_NAME,
+      Key: key,
+      Body: csv,
+      ContentType: 'text/csv'
+    });
+
+    await s3Client.send(putCommand);
+    console.log(`Successfully added trade for ${symbol}`);
+    return true;
+  } catch (error) {
+    console.error(`Failed to add trade for ${symbol}:`, error);
+    throw error;
   }
 };
 
