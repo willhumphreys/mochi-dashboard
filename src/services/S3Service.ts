@@ -180,39 +180,54 @@ export const readCsvFromS3 = async <T = TradeData>(
  * @param symbol - Stock symbol (e.g., 'AAPL')
  * @returns Promise that resolves to an array of trade data
  */
+import { ListObjectVersionsCommand } from "@aws-sdk/client-s3";
+
 export const fetchLiveTradesForSymbol = async (symbol: string): Promise<TradeData[]> => {
   try {
-
     const key = `${symbol}.csv`;
 
-    console.log(`Fetching live trades for ${symbol} from bucket ${LIVE_TRADES_BUCKET_NAME}`);
-
-    // Create the command to get the object
-    const command = new GetObjectCommand({
+    // Step 1: Get the latest version ID explicitly
+    const listVersionsCommand = new ListObjectVersionsCommand({
       Bucket: LIVE_TRADES_BUCKET_NAME,
-      Key: key
+      Prefix: key,
+      MaxKeys: 1
     });
 
-    // Fetch the object from S3
-    const response = await s3Client.send(command);
+    const versionsList = await s3Client.send(listVersionsCommand);
 
+    // Log the versions (helpful for debugging)
+    console.log(`Versions for ${key}:`, JSON.stringify(versionsList.Versions));
+
+    if (!versionsList.Versions || versionsList.Versions.length === 0) {
+      throw new Error(`No versions found for ${key}`);
+    }
+
+    // Get the latest version ID (versions are returned in descending order by date)
+    const latestVersionId = versionsList.Versions[0].VersionId;
+    console.log(`Using version ID: ${latestVersionId} for ${key}`);
+
+    // Step 2: Fetch the object with the explicit version ID
+    const getObjectCommand = new GetObjectCommand({
+      Bucket: LIVE_TRADES_BUCKET_NAME,
+      Key: key,
+      VersionId: latestVersionId // This is the key difference!
+    });
+
+    const response = await s3Client.send(getObjectCommand);
+
+    // Step 3: Process the response as you were before
     if (!response.Body) {
       throw new Error('No content in S3 response');
     }
 
-    // Convert the response body to text
     const csvContent = await response.Body.transformToString();
 
-    // Parse the CSV data using Papa Parse
     return new Promise<TradeData[]>((resolve, reject) => {
       Papa.parse<TradeData>(csvContent, {
         header: true,
         dynamicTyping: true,
         skipEmptyLines: true,
         complete: (results) => {
-          if (results.errors && results.errors.length > 0) {
-            console.warn('CSV parsing completed with errors:', results.errors);
-          }
           resolve(results.data);
         },
         error: (error: Error) => {
@@ -220,10 +235,9 @@ export const fetchLiveTradesForSymbol = async (symbol: string): Promise<TradeDat
         }
       });
     });
-
   } catch (error) {
     console.error(`Error fetching live trades for ${symbol}:`, error);
-    throw new Error(`Failed to fetch live trades: ${error instanceof Error ? error.message : String(error)}`);
+    throw error;
   }
 };
 
