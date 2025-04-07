@@ -48,7 +48,7 @@ function App() {
     return (
         <div className="App">
             <div className="app-header">
-                <DashboardTitle title="Strategy Performance Dashboard 2" />
+                <DashboardTitle title="Mochi Dashboard" />
                 <div className="user-info">
                     <span>Welcome, {(user as User).attributes?.email || 'User'}</span>
                     <button onClick={signOut} className="sign-out-button">Sign Out</button>

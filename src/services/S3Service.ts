@@ -245,34 +245,52 @@ export const fetchLiveTradesForSymbol = async (symbol: string): Promise<TradeDat
  * Gets all available stock symbols in the live trades bucket
  * @returns Promise that resolves to an array of symbols (without .csv extension)
  */
-export const getLiveTradeSymbols = async (): Promise<string[]> => {
+// This needs to be added or updated in your S3Service.ts
+
+/**
+ * Gets all available symbols for live trades
+ * @param forceRefresh - Whether to force a refresh of the symbols cache
+ * @returns A promise that resolves to an array of symbol strings
+ */
+    // Add caching mechanism - static variable within the function
+let cachedSymbols: string[] | null = null;
+let lastFetchTime: number = 0;
+const cacheExpiryMs = 60000; // 1 minute cache
+export const getLiveTradeSymbols = async (forceRefresh: boolean = false): Promise<string[]> => {
+
+  const now = Date.now();
+
+  // Return cached result if available and not expired, unless forced refresh
+  if (!forceRefresh && cachedSymbols && (now - lastFetchTime < cacheExpiryMs)) {
+    return cachedSymbols;
+  }
+
   try {
-    const bucketName = 'mochi-prod-live-trades';
-
-    console.log(`Listing objects in bucket: ${bucketName}`);
-
     const command = new ListObjectsV2Command({
-      Bucket: bucketName
+      Bucket: LIVE_TRADES_BUCKET_NAME,
+      Delimiter: '/'
     });
 
     const response = await s3Client.send(command);
 
-    if (!response.Contents) {
-      return [];
-    }
+    // Extract symbol names from the list of files (remove .csv extension)
+    const symbols = (response.Contents || [])
+        .map(item => {
+          const key = item.Key || '';
+          const match = key.match(/^([A-Z]+)\.csv$/);
+          return match ? match[1] : null;
+        })
+        .filter((symbol): symbol is string => symbol !== null)
+        .sort();
 
-    // Filter for CSV files and extract the symbol name
-    const symbols = response.Contents
-        .map(obj => obj.Key)
-        .filter((key): key is string => !!key && key.endsWith('.csv'))
-        .map(key => key.replace('.csv', ''));
+    // Update cache
+    cachedSymbols = symbols;
+    lastFetchTime = now;
 
-    console.log(`Found ${symbols.length} symbols in bucket ${bucketName}`);
     return symbols;
-
   } catch (error) {
-    console.error('Error getting live trade symbols:', error);
-    throw new Error(`Failed to get live trade symbols: ${error instanceof Error ? error.message : String(error)}`);
+    console.error('Error fetching live trade symbols:', error);
+    throw error;
   }
 };
 
@@ -399,6 +417,45 @@ export const addTradeForSymbol = async (
     return true;
   } catch (error) {
     console.error(`Failed to add trade for ${symbol}:`, error);
+    throw error;
+  }
+};
+
+// Add this to your S3Service.ts
+
+/**
+ * Creates a new ticker by saving an empty CSV file to S3 with proper headers
+ * @param symbol - The ticker symbol to create (e.g., GOOGL)
+ * @returns Promise that resolves when the file is successfully created
+ */
+export const createNewTicker = async (symbol: string): Promise<void> => {
+  try {
+    // Validate the symbol format
+    const symbolPattern = /^[A-Z]{1,5}$/;
+    if (!symbolPattern.test(symbol)) {
+      throw new Error("Symbol must be 1-5 uppercase letters");
+    }
+
+    // Create empty CSV with just the headers
+    const headers = "date,symbol,price,quantity,side,notional\n";
+    const key = `${symbol}.csv`;
+
+    // Create and send the PutObjectCommand
+    const command = new PutObjectCommand({
+      Bucket: LIVE_TRADES_BUCKET_NAME,
+      Key: key,
+      Body: headers,
+      ContentType: 'text/csv'
+    });
+
+    await s3Client.send(command);
+    console.log(`Created new ticker: ${symbol}`);
+
+    // Force refresh the list of available symbols
+    await getLiveTradeSymbols(true);
+
+  } catch (error) {
+    console.error(`Error creating new ticker ${symbol}:`, error);
     throw error;
   }
 };

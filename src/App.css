@@ -887,3 +887,68 @@ tr:hover {
   border-radius: 4px;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
+
+/* Add this to your CSS file */
+
+.create-ticker-form {
+  margin: 1rem 0;
+  padding: 1rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  background-color: #f9f9f9;
+}
+
+.create-ticker-form h3 {
+  margin-top: 0;
+  margin-bottom: 1rem;
+  font-size: 1.1rem;
+}
+
+.create-ticker-form .form-group {
+  display: flex;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.create-ticker-form label {
+  margin-right: 1rem;
+  font-weight: bold;
+}
+
+.create-ticker-form input {
+  padding: 0.5rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 1rem;
+}
+
+.create-button {
+  background-color: #4CAF50;
+  color: white;
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 1rem;
+}
+
+.create-button:hover {
+  background-color: #45a049;
+}
+
+.create-button:disabled {
+  background-color: #cccccc;
+  cursor: not-allowed;
+}
+
+.ticker-management {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.success {
+  color: #4CAF50;
+  margin-top: 0.5rem;
+  font-weight: bold;
+}

@@ -6,6 +6,7 @@ import SymbolSelector from './SymbolSelector';
 import TradeSummary from './TradeSummary';
 import { TradesTable } from "./LiveTradesTable.tsx";
 import AddTradeForm from './AddTradeForm';
+import CreateTickerForm from './CreateTickerForm';
 
 interface LiveTradesViewerProps {
   initialSymbol?: string;
@@ -20,9 +21,18 @@ export const LiveTradesViewer: React.FC<LiveTradesViewerProps> = ({
   const [tradeData, setTradeData] = useState<TradeData[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [symbolRefreshCounter, setSymbolRefreshCounter] = useState<number>(0);
 
   const handleTradeAdded = (newTrade: TradeData) => {
     setTradeData(prevTrades => [...prevTrades, newTrade]);
+  };
+
+  // Handle when a new ticker is created
+  const handleTickerCreated = (newSymbol: string) => {
+    // Trigger a refresh of the symbols list
+    setSymbolRefreshCounter(prev => prev + 1);
+    // Switch to the newly created ticker
+    setSymbol(newSymbol);
   };
 
   // Fetch trade data when symbol changes
@@ -59,17 +69,23 @@ export const LiveTradesViewer: React.FC<LiveTradesViewerProps> = ({
         <div className="control-panel">
           <h2>Live Trades Viewer</h2>
 
-          <SymbolSelector
-              initialSymbol={initialSymbol}
-              onSymbolChange={handleSymbolChange}
-              disabled={loading}
-          />
+          <div className="ticker-management">
+            <SymbolSelector
+                initialSymbol={initialSymbol}
+                onSymbolChange={handleSymbolChange}
+                disabled={loading}
+                refreshTrigger={symbolRefreshCounter}
+            />
+
+            <CreateTickerForm
+                onTickerCreated={handleTickerCreated}
+            />
+          </div>
 
           <AddTradeForm
               symbol={symbol}
               onTradeAdded={handleTradeAdded}
           />
-
 
           {loading && <div className="loading">Loading trade data...</div>}
           {error && <div className="error">{error}</div>}
