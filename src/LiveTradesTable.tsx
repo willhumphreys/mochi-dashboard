@@ -1,7 +1,6 @@
 // src/components/TradesTable.tsx
 import { useEffect, useState } from 'react';
 import { TradeData } from './types';
-import Papa from 'papaparse';
 import {LIVE_TRADES_BUCKET_NAME, readCsvFromS3} from "./services/S3Service.ts";
 
 interface TradesTableProps {
@@ -62,29 +61,57 @@ export const TradesTable: React.FC<TradesTableProps> = ({
                 }
 
                 // Use the existing readCsvFromS3 function to fetch and parse the data
-                const parsedData = await readCsvFromS3<Record<string, any>>(LIVE_TRADES_BUCKET_NAME, s3Key);
+                const parsedData = await readCsvFromS3<Record<string, string | number | boolean | undefined>>(LIVE_TRADES_BUCKET_NAME, s3Key);
 
                 // Process parsed data to ensure all required fields with proper types
                 const processedData: TradeData[] = parsedData.map(row => {
-                    // Generate a numeric ID if one doesn't exist or convert to number if it's a string
-                    const idValue = row.id ?
-                        (typeof row.id === 'number' ? row.id : parseInt(row.id, 10)) :
-                        Math.floor(Date.now() + Math.random() * 10000);
+                    // Properly handle the id field
+                    let idValue: number;
+                    if (row.id !== undefined) {
+                        if (typeof row.id === 'number') {
+                            idValue = row.id;
+                        } else if (typeof row.id === 'string') {
+                            idValue = parseInt(row.id, 10);
+                        } else {
+                            idValue = Math.floor(Date.now() + Math.random() * 10000);
+                        }
+                    } else {
+                        idValue = Math.floor(Date.now() + Math.random() * 10000);
+                    }
+
+                    // Helper function to safely parse numeric fields
+                    const safeParseInt = (value: unknown, defaultValue: number = 0): number => {
+                        if (typeof value === 'number') return value;
+                        if (typeof value === 'string') return parseInt(value, 10) || defaultValue;
+                        return defaultValue;
+                    };
+
+                    const safeParseFloat = (value: unknown, defaultValue: number = 0): number => {
+                        if (typeof value === 'number') return value;
+                        if (typeof value === 'string') return parseFloat(value) || defaultValue;
+                        return defaultValue;
+                    };
+
+                    // Helper to safely get string values
+                    const safeString = (value: unknown, defaultValue: string = ''): string => {
+                        if (typeof value === 'string') return value;
+                        if (value === null || value === undefined) return defaultValue;
+                        return String(value);
+                    };
 
                     return {
                         id: isNaN(idValue) ? Math.floor(Date.now() + Math.random() * 10000) : idValue,
-                        traderid: parseInt(row.traderid || row.TraderID || '0'),
-                        broker: String(row.broker || broker || ''),
-                        dayofweek: parseInt(String(row.dayofweek || row.DayOfWeek || '0'), 10),
-                        hourofday: parseInt(String(row.hourofday || row.HourOfDay || '0'), 10),
-                        stop: parseFloat(String(row.stop || row.Stop || '0')),
-                        limit: parseFloat(String(row.limit || row.Limit || '0')),
-                        tickoffset: parseFloat(String(row.tickoffset || row.TickOffset || '0')),
-                        tradeduration: parseInt(String(row.tradeduration || row.TradeDuration || '0'), 10),
-                        outoftime: parseInt(String(row.outoftime || row.OutOfTime || '0'), 10)
+                        traderid: safeParseInt(row.traderid || row.TraderID, 0),
+                        broker: safeString(row.broker || broker),
+                        dayofweek: safeParseInt(row.dayofweek || row.DayOfWeek, 0),
+                        hourofday: safeParseInt(row.hourofday || row.HourOfDay, 0),
+                        stop: safeParseFloat(row.stop || row.Stop, 0),
+                        limit: safeParseFloat(row.limit || row.Limit, 0),
+                        tickoffset: safeParseFloat(row.tickoffset || row.TickOffset, 0),
+                        tradeduration: safeParseInt(row.tradeduration || row.TradeDuration, 0),
+                        outoftime: safeParseInt(row.outoftime || row.OutOfTime, 0)
                     };
                 });
-
                 setTradeData(processedData);
                 setLoading(false);
 

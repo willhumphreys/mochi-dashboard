@@ -396,7 +396,7 @@ export const addTradeForSymbol = async (symbol: string, newTrade: TradeData, bro
     }
 }
 
-export const fetchLiveTradesForSymbol = async (symbol: string, broker: string, forceRefresh = false): Promise<TradeData[]> => {
+export const fetchLiveTradesForSymbol = async (symbol: string, broker: string): Promise<TradeData[]> => {
     try {
         // Use the correct path format
         const key = `brokers/${broker}/symbols/${symbol}/trades.csv`;
@@ -451,7 +451,7 @@ export const fetchLiveTradesForSymbol = async (symbol: string, broker: string, f
             console.log(trades);
             return trades;
         } catch (error) {
-            if (error.name === 'NoSuchKey') {
+            if (error instanceof Error && error.name === 'NoSuchKey') {
                 console.log(`No trades file exists yet for ${symbol} from broker ${broker}`);
                 return [];
             }
