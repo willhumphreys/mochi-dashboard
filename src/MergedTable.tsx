@@ -33,8 +33,8 @@ const MergedTable = ({onRowSelect, symbol = "AAPL_polygon_min", data}: MergedTab
                 setError(null);
 
                 // Define the S3 paths for the CSV files using the provided symbol
-                const filteredSetupsKey = `${symbol}/filtered-setups.csv`;
-                const aggregatedSummaryKey = `${symbol}/aggregated_filtered_summary.csv`;
+                const filteredSetupsKey = `${symbol}_polygon_min/filtered-setups.csv`;
+                const aggregatedSummaryKey = `${symbol}_polygon_min/aggregated_filtered_summary.csv`;
 
                 // Get URLs for both CSV files
                 let filteredSetupsUrl: string;

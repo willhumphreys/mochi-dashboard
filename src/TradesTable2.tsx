@@ -1,26 +1,39 @@
-// src/components/TradesTable.tsx
-import {useEffect, useState} from 'react';
-import {TradeData} from './types';
-import {getSignedS3Url, LIVE_TRADES_BUCKET_NAME, readCsvFromS3WithSignedUrl} from "./services/S3Service.ts";
+// src/components/TradesTable2.tsx
+import { useEffect, useState } from 'react';
+import { getSignedS3Url, LIVE_TRADES_BUCKET_NAME, readCsvFromS3WithSignedUrl } from "./services/S3Service.ts";
 import Papa from 'papaparse';
 
-interface TradesTableProps {
+// Define the interface for the new data format
+interface TradeResultData {
+    PlaceDateTime: string;
+    FilledPrice: number;
+    ClosingPrice: number;
+    Profit: number;
+    RunningTotalProfit: number;
+    State: string;
+}
+
+interface TradesTable2Props {
     symbol?: string;
-    tradeData?: TradeData[];
+    tradeData?: TradeResultData[];
     broker?: string;
     tradesUrl?: string;
 }
 
-export const TradesTable: React.FC<TradesTableProps> = ({
-                                                            symbol: propSymbol,
-                                                            tradeData: propTradeData,
-                                                            broker = 'Unknown',
-                                                            tradesUrl
-                                                        }) => {
-    const [tradeData, setTradeData] = useState<TradeData[]>(propTradeData || []);
+export const TradesTable2: React.FC<TradesTable2Props> = ({
+                                                              symbol: propSymbol,
+                                                              tradeData: propTradeData,
+                                                              broker = 'Unknown',
+                                                              tradesUrl
+                                                          }) => {
+    const [tradeData, setTradeData] = useState<TradeResultData[]>(propTradeData || []);
     const [symbol, setSymbol] = useState<string>(propSymbol || '');
     const [loading, setLoading] = useState<boolean>(!!tradesUrl);
     const [error, setError] = useState<string | null>(null);
+
+    // Define styles for positive and negative profits
+    const profitStyle = { color: '#00b300' }; // Green color
+    const lossStyle = { color: '#ff0000' };   // Red color
 
     useEffect(() => {
         // Update state when prop changes directly
@@ -111,41 +124,26 @@ export const TradesTable: React.FC<TradesTableProps> = ({
                     csvData = parseResult.data;
                 } else {
                     // Handle the case where tradesUrl is a key path rather than a full URL
-                    // Use the bucket name provided in the constant and the tradesUrl as the key
                     const s3Key = tradesUrl;
 
                     // Use the readCsvFromS3WithSignedUrl function
-                    csvData = await readCsvFromS3WithSignedUrl<Record<string, string | number | boolean | undefined>>(LIVE_TRADES_BUCKET_NAME, s3Key, {
-                        expiresIn: 900, // 15 minutes
-                        parseOptions: {
-                            header: true, dynamicTyping: true, skipEmptyLines: true
+                    csvData = await readCsvFromS3WithSignedUrl<Record<string, string | number | boolean | undefined>>(
+                        LIVE_TRADES_BUCKET_NAME,
+                        s3Key,
+                        {
+                            expiresIn: 900, // 15 minutes
+                            parseOptions: {
+                                header: true,
+                                dynamicTyping: true,
+                                skipEmptyLines: true
+                            }
                         }
-                    });
+                    );
                 }
 
                 // Process parsed data to ensure all required fields with proper types
-                const processedData: TradeData[] = csvData.map(row => {
-                    // Properly handle the id field
-                    let idValue: number;
-                    if (row.id !== undefined) {
-                        if (typeof row.id === 'number') {
-                            idValue = row.id;
-                        } else if (typeof row.id === 'string') {
-                            idValue = parseInt(row.id, 10);
-                        } else {
-                            idValue = Math.floor(Date.now() + Math.random() * 10000);
-                        }
-                    } else {
-                        idValue = Math.floor(Date.now() + Math.random() * 10000);
-                    }
-
+                const processedData: TradeResultData[] = csvData.map(row => {
                     // Helper function to safely parse numeric fields
-                    const safeParseInt = (value: unknown, defaultValue: number = 0): number => {
-                        if (typeof value === 'number') return value;
-                        if (typeof value === 'string') return parseInt(value, 10) || defaultValue;
-                        return defaultValue;
-                    };
-
                     const safeParseFloat = (value: unknown, defaultValue: number = 0): number => {
                         if (typeof value === 'number') return value;
                         if (typeof value === 'string') return parseFloat(value) || defaultValue;
@@ -160,16 +158,12 @@ export const TradesTable: React.FC<TradesTableProps> = ({
                     };
 
                     return {
-                        id: isNaN(idValue) ? Math.floor(Date.now() + Math.random() * 10000) : idValue,
-                        traderid: safeParseInt(row.traderid || row.TraderID, 0),
-                        broker: safeString(row.broker || broker),
-                        dayofweek: safeParseInt(row.dayofweek || row.DayOfWeek, 0),
-                        hourofday: safeParseInt(row.hourofday || row.HourOfDay, 0),
-                        stop: safeParseFloat(row.stop || row.Stop, 0),
-                        limit: safeParseFloat(row.limit || row.Limit, 0),
-                        tickoffset: safeParseFloat(row.tickoffset || row.TickOffset, 0),
-                        tradeduration: safeParseInt(row.tradeduration || row.TradeDuration, 0),
-                        outoftime: safeParseInt(row.outoftime || row.OutOfTime, 0)
+                        PlaceDateTime: safeString(row.PlaceDateTime),
+                        FilledPrice: safeParseFloat(row.FilledPrice),
+                        ClosingPrice: safeParseFloat(row.ClosingPrice),
+                        Profit: safeParseFloat(row.Profit),
+                        RunningTotalProfit: safeParseFloat(row.RunningTotalProfit),
+                        State: safeString(row.State)
                     };
                 });
 
@@ -178,68 +172,71 @@ export const TradesTable: React.FC<TradesTableProps> = ({
 
             } catch (err) {
                 console.error('Error fetching and parsing CSV:', err);
-                setError(`Error: ${err instanceof Error ? err.message : 'Unknown error'}`);
+                setError(`Error loading trade results: ${err instanceof Error ? err.message : 'Unknown error'}`);
                 setLoading(false);
             }
         };
+
         fetchAndParseCsv();
-    }, [tradesUrl, propSymbol, broker]);
+    }, [tradesUrl, propSymbol]);
 
     if (loading) {
-        return <div className="loading-csv">Loading trade data...</div>;
+        return <div>Loading trade results...</div>;
     }
 
     if (error) {
-        return <div className="error-message">Error loading trade data: {error}</div>;
+        return <div className="error">{error}</div>;
     }
 
     if (tradeData.length === 0) {
-        return (<div className="no-data">
-                No trade data available {symbol ? `for ${symbol}` : ''}
-                {broker !== 'Unknown' ? ` with broker ${broker}` : ''}
-            </div>);
+        return <div>No trade results available.</div>;
     }
 
-    const displayBroker = broker !== 'Unknown' ? broker : '';
+    // Calculate total profit
+    const totalProfit = tradeData.reduce((sum, trade) => sum + trade.Profit, 0);
 
-    return (<div className="trades-table-container">
-            <h3>
-                {symbol} Trade Data
-                {displayBroker && ` for ${displayBroker}`}
-                {' '}({tradeData.length} records)
-            </h3>
+    return (
+        <div className="trades-table-container">
+            <h3>{symbol} Trade Results {broker ? `(${broker})` : ''}</h3>
+
+            <div className="summary">
+                <p>Total trades: {tradeData.length}</p>
+                <p>Total profit: <span style={totalProfit >= 0 ? profitStyle : lossStyle}>
+                    {totalProfit.toFixed(2)}
+                </span></p>
+                <p>Average profit per trade: <span style={(totalProfit / tradeData.length) >= 0 ? profitStyle : lossStyle}>
+                    {(totalProfit / tradeData.length).toFixed(2)}
+                </span></p>
+            </div>
 
             <table className="trades-table">
                 <thead>
                 <tr>
-                    <th>#</th>
-                    <th>Trader ID</th>
-                    <th>Broker</th>
-                    <th>Day of Week</th>
-                    <th>Hour of Day</th>
-                    <th>Stop</th>
-                    <th>Limit</th>
-                    <th>Tick Offset</th>
-                    <th>Trade Duration</th>
-                    <th>Out of Time</th>
+                    <th>Date/Time</th>
+                    <th>Entry Price</th>
+                    <th>Exit Price</th>
+                    <th>Profit</th>
+                    <th>Running Total</th>
+                    <th>Exit Reason</th>
                 </tr>
                 </thead>
                 <tbody>
-                {tradeData.map((trade, index) => (<tr key={index}>
-                        <td>{index + 1}</td>
-                        <td>{trade.traderid}</td>
-                        <td>{trade.broker || broker}</td>
-                        <td>{trade.dayofweek}</td>
-                        <td>{trade.hourofday}</td>
-                        <td>{trade.stop}</td>
-                        <td>{trade.limit}</td>
-                        <td>{trade.tickoffset}</td>
-                        <td>{trade.tradeduration}</td>
-                        <td>{trade.outoftime}</td>
-                    </tr>))}
+                {tradeData.map((trade, index) => (
+                    <tr key={index}>
+                        <td>{trade.PlaceDateTime}</td>
+                        <td>{trade.FilledPrice}</td>
+                        <td>{trade.ClosingPrice}</td>
+                        <td style={trade.Profit >= 0 ? profitStyle : lossStyle}>
+                            {trade.Profit}
+                        </td>
+                        <td style={trade.RunningTotalProfit >= 0 ? profitStyle : lossStyle}>
+                            {trade.RunningTotalProfit}
+                        </td>
+                        <td>{trade.State}</td>
+                    </tr>
+                ))}
                 </tbody>
             </table>
-        </div>);
+        </div>
+    );
 };
-
-export default TradesTable;

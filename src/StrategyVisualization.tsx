@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { MergedData, TraderConfigDetails } from "./types";
 import { getS3ImageUrl, getDirectS3Url } from "./services/S3Service";
-import { TradesTable } from "./LiveTradesTable";
+import { TradesTable2 } from "./TradesTable2";
 
 interface StrategyVisualizationProps {
     selectedStrategy: MergedData | null;
@@ -485,7 +485,7 @@ const StrategyVisualization = ({ selectedStrategy }: StrategyVisualizationProps)
                     </div>
                 )}
 
-                {tradesUrl && <TradesTable tradesUrl={tradesUrl} />}
+                {tradesUrl && <TradesTable2 tradesUrl={tradesUrl} />}
 
             </div>
         </div>

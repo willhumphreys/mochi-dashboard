@@ -122,7 +122,10 @@ export const listAllKeys = async (bucketName: string, prefix: string = ''): Prom
  * @param key - Object key (file path) in the bucket
  * @returns Promise that resolves to an array of parsed trade data
  */
-export const readCsvFromS3 = async <T = TradeData>(bucketName: string, key: string): Promise<T[]> => {
+export const readCsvFromS3 = async <T = TradeData>(
+    bucketName: string,
+    key: string
+): Promise<T[]> => {
     try {
         console.log(`Reading CSV file from bucket: ${bucketName}, key: ${key}`);
 
@@ -144,13 +147,16 @@ export const readCsvFromS3 = async <T = TradeData>(bucketName: string, key: stri
 // Parse the CSV data using Papa Parse
         return new Promise<T[]>((resolve, reject) => {
             Papa.parse<T>(csvContent, {
-                header: true, dynamicTyping: true, // Automatically convert numeric values
-                skipEmptyLines: true, complete: (results) => {
+                header: true,
+                dynamicTyping: true, // Automatically convert numeric values
+                skipEmptyLines: true,
+                complete: (results) => {
                     if (results.errors && results.errors.length > 0) {
                         console.warn('CSV parsing completed with errors:', results.errors);
                     }
                     resolve(results.data);
-                }, error: (error: Error) => {
+                },
+                error: (error: Error) => {
                     reject(new Error(`CSV parsing error: ${error.message}`));
                 }
             });
@@ -508,6 +514,273 @@ export const createNewTicker = async (symbol: string, broker: string): Promise<v
     } catch (error) {
         console.error(`Error creating new ticker ${symbol} for broker ${broker}:`, error);
         throw error;
+    }
+};
+
+/**
+ * Generates a pre-signed URL for an S3 object with temporary access
+ * @param bucketName - Name of the S3 bucket
+ * @param key - Object key (file path) in the bucket
+ * @param expiresIn - URL expiration time in seconds (default: 15 minutes)
+ * @param region - AWS region (optional, defaults to client's region)
+ * @returns Promise that resolves to a pre-signed URL
+ */
+export const getSignedS3Url = async (
+    bucketName: string,
+    key: string,
+    expiresIn: number = 900, // 15 minutes default
+    region?: string
+): Promise<string> => {
+    try {
+        // Create a new client with the specified region if provided
+        const client = region ? new S3Client({ region }) : s3Client;
+
+        // Create the command to get the object
+        const command = new GetObjectCommand({
+            Bucket: bucketName,
+            Key: key
+        });
+
+        // Generate the signed URL
+        const signedUrl = await getSignedUrl(client, command, { expiresIn });
+
+        return signedUrl;
+    } catch (error) {
+        console.error(`Error generating signed URL for ${bucketName}/${key}:`, error);
+        throw new Error(`Failed to generate signed URL: ${error instanceof Error ? error.message : String(error)}`);
+    }
+};
+
+/**
+ * Reads and parses a CSV file from S3 using a pre-signed URL
+ * @param bucketName - Name of the S3 bucket
+ * @param key - Object key (file path) in the bucket
+ * @param options - Additional options for URL generation and parsing
+ * @returns Promise that resolves to an array of parsed data
+ */
+export const readCsvFromS3WithSignedUrl = async <T>(
+    bucketName: string,
+    key: string,
+    options: {
+        expiresIn?: number;
+        region?: string;
+        parseOptions?: Papa.ParseConfig;
+    } = {}
+): Promise<T[]> => {
+    try {
+        console.log(`Reading CSV file from bucket: ${bucketName}, key: ${key} using signed URL`);
+
+        // Generate a signed URL for the S3 object
+        const signedUrl = await getSignedS3Url(
+            bucketName,
+            key,
+            options.expiresIn,
+            options.region
+        );
+
+        // Fetch the content using the signed URL
+        const response = await fetch(signedUrl);
+
+        if (!response.ok) {
+            throw new Error(`Failed to fetch data: ${response.status} ${response.statusText}`);
+        }
+
+        // Get the CSV content
+        const csvContent = await response.text();
+
+        // Parse the CSV data using Papa Parse
+        return new Promise<T[]>((resolve, reject) => {
+            Papa.parse<T>(csvContent, {
+                header: true,
+                dynamicTyping: true, // Automatically convert numeric values
+                skipEmptyLines: true,
+                ...options.parseOptions, // Allow overriding default parse options
+                complete: (results) => {
+                    if (results.errors && results.errors.length > 0) {
+                        console.warn('CSV parsing completed with errors:', results.errors);
+                    }
+                    resolve(results.data);
+                },
+                error: (error: Error) => {
+                    reject(new Error(`CSV parsing error: ${error.message}`));
+                }
+            });
+        });
+    } catch (error) {
+        console.error(`Error reading CSV from ${bucketName}/${key} with signed URL:`, error);
+        throw new Error(`Failed to read CSV: ${error instanceof Error ? error.message : String(error)}`);
+    }
+};
+
+/**
+ * Reads data from an S3 object using a pre-signed URL and returns the raw response
+ * This can be used for any file type, not just CSV
+ * @param bucketName - Name of the S3 bucket
+ * @param key - Object key (file path) in the bucket
+ * @param options - Additional options for URL generation
+ * @returns Promise that resolves to the fetch response
+ */
+export const getS3ObjectWithSignedUrl = async (
+    bucketName: string,
+    key: string,
+    options: {
+        expiresIn?: number;
+        region?: string;
+        responseType?: 'text' | 'json' | 'blob' | 'arrayBuffer';
+    } = {}
+): Promise<Response> => {
+    try {
+        // Generate a signed URL for the S3 object
+        const signedUrl = await getSignedS3Url(
+            bucketName,
+            key,
+            options.expiresIn,
+            options.region
+        );
+
+        // Fetch the content using the signed URL
+        const response = await fetch(signedUrl);
+
+        if (!response.ok) {
+            throw new Error(`Failed to fetch data: ${response.status} ${response.statusText}`);
+        }
+
+        return response;
+    } catch (error) {
+        console.error(`Error fetching ${bucketName}/${key} with signed URL:`, error);
+        throw new Error(`Failed to fetch S3 object: ${error instanceof Error ? error.message : String(error)}`);
+    }
+};
+
+/**
+ * Read JSON data from S3 using a pre-signed URL
+ * @param bucketName - Name of the S3 bucket
+ * @param key - Object key (file path) in the bucket
+ * @param options - Additional options for URL generation
+ * @returns Promise that resolves to the parsed JSON data
+ */
+export const readJsonFromS3WithSignedUrl = async <T>(
+    bucketName: string,
+    key: string,
+    options: {
+        expiresIn?: number;
+        region?: string;
+    } = {}
+): Promise<T> => {
+    try {
+        const response = await getS3ObjectWithSignedUrl(bucketName, key, options);
+        return await response.json() as T;
+    } catch (error) {
+        console.error(`Error reading JSON from ${bucketName}/${key}:`, error);
+        throw new Error(`Failed to read JSON: ${error instanceof Error ? error.message : String(error)}`);
+    }
+};
+
+/**
+ * Generic function to read a specific file format from S3 using a pre-signed URL
+ * @param directUrl - The direct URL to the S3 object
+ * @param options - Additional options for URL generation and fetching
+ * @returns Promise that resolves to the response processed according to responseType
+ */
+export const fetchFromSignedUrl = async <T>(
+    directUrl: string,
+    options: {
+        responseType: 'text' | 'json' | 'blob' | 'arrayBuffer';
+        parseOptions?: Record<string, unknown>; // Type depends on responseType
+    }
+): Promise<T> => {
+    try {
+        // Extract bucket and key from the URL
+        const url = new URL(directUrl);
+        const hostParts = url.hostname.split('.');
+
+        // Handle different URL formats (virtual-hosted vs path-style)
+        let bucketName, key;
+
+        if (hostParts[0].endsWith('s3') || hostParts[0] === 'localhost') {
+            // Path-style URL (s3.region.amazonaws.com/bucket-name/key)
+            const pathParts = url.pathname.split('/').filter(Boolean);
+            bucketName = pathParts[0];
+            key = pathParts.slice(1).join('/');
+        } else {
+            // Virtual-hosted style URL (bucket-name.s3.region.amazonaws.com/key)
+            bucketName = hostParts[0];
+            key = url.pathname.substring(1); // Remove leading slash
+        }
+
+        // Get the region from the hostname
+        const regionMatch = url.hostname.match(/s3[.-]([a-z0-9-]+)/);
+        const region = regionMatch ? regionMatch[1] : 'eu-central-1';
+
+        // Generate a signed URL
+        const signedUrl = await getSignedS3Url(bucketName, key, 900, region);
+
+        // Fetch the content
+        const response = await fetch(signedUrl);
+
+        if (!response.ok) {
+            throw new Error(`Failed to fetch data: ${response.status} ${response.statusText}`);
+        }
+
+        // Process based on response type
+        switch (options.responseType) {
+            case 'text':
+                return await response.text() as unknown as T;
+            case 'json':
+                return await response.json() as T;
+            case 'blob':
+                return await response.blob() as unknown as T;
+            case 'arrayBuffer':
+                return await response.arrayBuffer() as unknown as T;
+            default:
+                return await response.text() as unknown as T;
+        }
+    } catch (error) {
+        console.error(`Error fetching from URL with signed URL:`, error);
+        throw new Error(`Failed to fetch: ${error instanceof Error ? error.message : String(error)}`);
+    }
+};
+
+/**
+ * Converts a direct S3 URL to a signed URL for temporary access
+ * @param directUrl - Direct S3 URL (https://bucket-name.s3.region.amazonaws.com/key)
+ * @param expiresIn - URL expiration time in seconds (default: 15 minutes)
+ * @returns Promise that resolves to a pre-signed URL
+ */
+export const convertToSignedUrl = async (
+    directUrl: string,
+    expiresIn: number = 900
+): Promise<string> => {
+    try {
+        // Parse the URL to extract bucket, key, and region
+        const url = new URL(directUrl);
+        const hostParts = url.hostname.split('.');
+
+        let bucketName, key, region;
+
+        // Determine URL format and extract components
+        if (hostParts[0].endsWith('s3')) {
+            // Path-style URL (s3.region.amazonaws.com/bucket-name/key)
+            const pathParts = url.pathname.split('/').filter(Boolean);
+            bucketName = pathParts[0];
+            key = pathParts.slice(1).join('/');
+
+            // Extract region from hostname
+            region = hostParts[1];
+        } else {
+            // Virtual-hosted style (bucket-name.s3.region.amazonaws.com/key)
+            bucketName = hostParts[0];
+            key = url.pathname.substring(1); // Remove leading slash
+
+            // Extract region from hostname
+            region = hostParts[2];
+        }
+
+        // Generate a signed URL for the object
+        return await getSignedS3Url(bucketName, key, expiresIn, region);
+    } catch (error) {
+        console.error(`Error converting to signed URL: ${directUrl}`, error);
+        throw new Error(`Failed to convert to signed URL: ${error instanceof Error ? error.message : String(error)}`);
     }
 };
 
