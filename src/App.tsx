@@ -1,4 +1,4 @@
-// src/App.tsx
+// App.tsx (modified version)
 import { useAuth } from './AuthContext';
 import { useState, useCallback } from 'react';
 import './App.css';
@@ -8,7 +8,8 @@ import Dashboard from "./Dashboard";
 import DashboardTitle from "./DashboardTitle";
 import MergedTable from "./MergedTable";
 import BacktestRequest from './BacktestRequest';
-import LiveTradesViewer from './LiveTradesViewer'; // Import the LiveTradesViewer component
+import {LiveTradesViewer} from './LiveTradesViewer';
+import BrokerManager from './BrokerManager.tsx'; // Import the new component
 import { MergedData } from "./types";
 import Login from './Login';
 
@@ -18,7 +19,8 @@ function App() {
     const [selectedStrategy, setSelectedStrategy] = useState<MergedData | null>(null);
     const [selectedSymbol, setSelectedSymbol] = useState<string | null>(null);
     const [showBacktestForm, setShowBacktestForm] = useState<boolean>(false);
-    const [showLiveTrades, setShowLiveTrades] = useState<boolean>(false); // State to toggle live trades view
+    const [showLiveTrades, setShowLiveTrades] = useState<boolean>(false);
+    const [showBrokerManager, setShowBrokerManager] = useState<boolean>(false); // New state for broker manager
 
     const handleStrategySelect = useCallback((row: MergedData) => {
         setSelectedStrategy(row);
@@ -55,7 +57,7 @@ function App() {
                 </div>
             </div>
 
-            {/* Tools section with both backtest and live trades toggles */}
+            {/* Tools section with all toggles */}
             <div className="tools-section">
                 <div className="tools-header">
                     <h2>Trading Tools</h2>
@@ -72,6 +74,12 @@ function App() {
                         >
                             {showLiveTrades ? 'Hide Live Trades' : 'Show Live Trades'}
                         </button>
+                        <button
+                            onClick={() => setShowBrokerManager(!showBrokerManager)}
+                            className="toggle-button"
+                        >
+                            {showBrokerManager ? 'Hide Broker Manager' : 'Manage Brokers'}
+                        </button>
                     </div>
                 </div>
 
@@ -80,6 +88,7 @@ function App() {
                     initialSymbol={selectedSymbol || 'AAPL'}
                     onSymbolChange={handleLiveTradeSymbolChange}
                 />}
+                {showBrokerManager && <BrokerManager />}
             </div>
 
             <div className="app-content">
@@ -93,12 +102,10 @@ function App() {
                             <StrategyVisualization selectedStrategy={selectedStrategy} />
                         ) : selectedSymbol ? (
                             <MergedTable
-                                symbol={`${selectedSymbol}_polygon_min`}
+                                symbol={selectedSymbol}
                                 onRowSelect={handleStrategySelect}
                             />
-                        ) : (
-                            <div className="empty-state">Select a stock symbol or strategy to view details</div>
-                        )
+                        ) : null
                     }
                 />
             </div>

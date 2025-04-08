@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { MergedData, TraderConfigDetails } from "./types";
 import { getS3ImageUrl, getDirectS3Url } from "./services/S3Service";
-import { TradesTable } from "./TradesTable";
+import { TradesTable } from "./LiveTradesTable";
 
 interface StrategyVisualizationProps {
     selectedStrategy: MergedData | null;

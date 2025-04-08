@@ -4,9 +4,11 @@ import { createNewTicker } from './services/S3Service';
 
 interface CreateTickerFormProps {
     onTickerCreated: (symbol: string) => void;
+    broker: string;  // Add this line
 }
 
-const CreateTickerForm: React.FC<CreateTickerFormProps> = ({ onTickerCreated }) => {
+
+const CreateTickerForm: React.FC<CreateTickerFormProps> = ({ onTickerCreated, broker }) => {
     const [newSymbol, setNewSymbol] = useState<string>('');
     const [isCreating, setIsCreating] = useState<boolean>(false);
     const [error, setError] = useState<string | null>(null);
@@ -27,7 +29,7 @@ const CreateTickerForm: React.FC<CreateTickerFormProps> = ({ onTickerCreated }) 
         setIsCreating(true);
 
         try {
-            await createNewTicker(newSymbol);
+            await createNewTicker(newSymbol, broker);  // Pass the broker here
             setSuccessMessage(`Ticker ${newSymbol} successfully created!`);
             setNewSymbol(''); // Clear the input
             onTickerCreated(newSymbol); // Notify parent component
@@ -36,6 +38,7 @@ const CreateTickerForm: React.FC<CreateTickerFormProps> = ({ onTickerCreated }) 
         } finally {
             setIsCreating(false);
         }
+
     };
 
     return (

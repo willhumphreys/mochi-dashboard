@@ -952,3 +952,218 @@ tr:hover {
   margin-top: 0.5rem;
   font-weight: bold;
 }
+
+/* BrokerManager.css */
+.broker-manager {
+  padding: 20px;
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  margin-bottom: 20px;
+}
+
+.broker-manager-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.broker-manager h2 {
+  margin: 0;
+  color: #333;
+}
+
+.add-broker-btn {
+  background-color: #1976d2;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.add-broker-btn:hover {
+  background-color: #1565c0;
+}
+
+.add-broker-btn:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+
+.error-message {
+  background-color: #ffebee;
+  color: #c62828;
+  padding: 12px;
+  border-radius: 4px;
+  margin-bottom: 16px;
+}
+
+.broker-form {
+  background-color: #f5f5f5;
+  padding: 20px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+}
+
+.broker-form h3 {
+  margin-top: 0;
+  margin-bottom: 16px;
+  color: #333;
+}
+
+.form-group {
+  margin-bottom: 16px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 6px;
+  font-weight: 500;
+}
+
+.form-group input[type="text"] {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 16px;
+}
+
+.form-group.checkbox {
+  display: flex;
+  align-items: center;
+}
+
+.form-group.checkbox label {
+  display: flex;
+  align-items: center;
+  margin-bottom: 0;
+}
+
+.form-group.checkbox input {
+  margin-right: 8px;
+}
+
+.form-group small {
+  display: block;
+  color: #666;
+  margin-top: 4px;
+  font-size: 12px;
+}
+
+.form-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.form-actions button {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.form-actions button[type="submit"] {
+  background-color: #4caf50;
+  color: white;
+}
+
+.form-actions button[type="submit"]:hover {
+  background-color: #388e3c;
+}
+
+.form-actions button[type="button"] {
+  background-color: #f5f5f5;
+  border: 1px solid #ddd;
+}
+
+.form-actions button:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+
+.brokers-list table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.brokers-list th,
+.brokers-list td {
+  padding: 12px;
+  text-align: left;
+  border-bottom: 1px solid #eee;
+}
+
+.brokers-list th {
+  background-color: #f5f5f5;
+  font-weight: 500;
+}
+
+.brokers-list tr:hover {
+  background-color: #f9f9f9;
+}
+
+.brokers-list .actions {
+  display: flex;
+  gap: 8px;
+}
+
+.brokers-list .edit-btn,
+.brokers-list .delete-btn {
+  border: none;
+  padding: 6px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.brokers-list .edit-btn {
+  background-color: #ffb74d;
+  color: #333;
+}
+
+.brokers-list .edit-btn:hover {
+  background-color: #ffa726;
+}
+
+.brokers-list .delete-btn {
+  background-color: #ef5350;
+  color: white;
+}
+
+.brokers-list .delete-btn:hover {
+  background-color: #e53935;
+}
+
+.brokers-list .edit-btn:disabled,
+.brokers-list .delete-btn:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+
+.status {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.status.active {
+  background-color: #c8e6c9;
+  color: #2e7d32;
+}
+
+.status.inactive {
+  background-color: #ffccbc;
+  color: #d84315;
+}
+
+.loading, .no-brokers {
+  padding: 20px;
+  text-align: center;
+  color: #666;
+}

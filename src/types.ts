@@ -179,3 +179,15 @@ export interface TradeData {
 
     [key: string]: string | number | boolean | undefined; // Allow additional fields with specific types
 }
+
+export interface TradeSetup {
+    rank?: number;  // The CSV has an unnamed first column that appears to be the rank
+    traderid: number;
+    dayofweek: number;
+    hourofday: number;
+    stop: number;
+    limit: number;
+    tickoffset: number;
+    tradeduration: number;
+    outoftime: number;
+}
