@@ -1,16 +1,17 @@
 // src/components/TradesTable.tsx
 import {useEffect, useState} from 'react';
 import {TradeData} from './types';
-import {getSignedS3Url, LIVE_TRADES_BUCKET_NAME, readCsvFromS3WithSignedUrl} from "./services/S3Service.ts";
+import {
+    getSignedS3Url,
+    LIVE_TRADES_BUCKET_NAME,
+    readCsvFromS3WithSignedUrl,
+    updateCsvInS3
+} from "./services/S3Service.ts";
 import Papa from 'papaparse';
 import '@aws-amplify/ui-react/styles.css';
 
 // Add to your imports
 import { Button, Card, Flex, Heading, Text, View } from '@aws-amplify/ui-react';
-
-
-
-
 
 interface TradesTableProps {
     symbol?: string;
@@ -41,17 +42,62 @@ export const TradesTable: React.FC<TradesTableProps> = ({
     };
 
 // Function to handle the actual deletion
-    const confirmDelete = () => {
+    const confirmDelete = async () => {
         if (rowToDelete !== null) {
-            // Perform your delete operation here using rowToDelete
-            console.log(`Deleting row at index: ${rowToDelete}`);
+            try {
+                // Get the current data and remove the row to delete
+                const currentData = [...tradeData];
+                currentData.splice(rowToDelete, 1);
+
+                // Convert the modified data back to CSV format
+                const csv = Papa.unparse(currentData);
+
+                // Extract the object key from the tradesUrl or construct it
+                let objectKey: string;
+
+                if (tradesUrl) {
+                    // Handle the ARN format
+                    if (tradesUrl.startsWith('arn:aws:s3:::')) {
+                        // For ARN format: arn:aws:s3:::bucket-name/path/to/object
+                        const parts = tradesUrl.split(':::');
+                        if (parts.length > 1) {
+                            const bucketAndPath = parts[1];
+                            const bucketPathParts = bucketAndPath.split('/');
+                            // Remove bucket name from path to get the object key
+                            objectKey = bucketPathParts.slice(1).join('/');
+                        } else {
+                            throw new Error('Invalid ARN format in tradesUrl');
+                        }
+                    }
+                    // Handle the regular URL format
+                    else {
+                        const url = new URL(tradesUrl);
+                        objectKey = url.pathname.substring(1); // Remove leading slash
+                    }
+                } else {
+                    // Construct key based on the pattern if URL not provided
+                    objectKey = `brokers/${broker}/symbols/${symbol}/trades.csv`;
+                }
+
+                console.log(`Updating S3 object with key: ${objectKey}`);
+
+                // Update the CSV file in S3 with the new content
+                await updateCsvInS3(LIVE_TRADES_BUCKET_NAME, objectKey, csv);
+
+                // Update the local state to reflect the deletion
+                setTradeData(currentData);
+
+                console.log(`Successfully deleted row at index: ${rowToDelete}`);
+            } catch (error) {
+                console.error('Error updating CSV in S3:', error);
+                setError(`Failed to update: ${error instanceof Error ? error.message : String(error)}`);
+            }
 
             // Reset states after deletion
             setDeleteConfirmOpen(false);
             setRowToDelete(null);
         }
     };
-
     useEffect(() => {
         // Update state when prop changes directly
         if (propTradeData) {

@@ -784,5 +784,34 @@ export const convertToSignedUrl = async (
     }
 };
 
+/**
+ * Deletes object from S3 and optionally uploads a new version in its place
+ * @param bucketName - Name of the S3 bucket
+ * @param key - Object key (path) in the bucket
+ * @param newContent - Optional content to upload after deletion
+ * @returns Promise that resolves when the operation completes
+ */
+export const updateCsvInS3 = async (
+    bucketName: string,
+    key: string,
+    content: string
+): Promise<void> => {
+    try {
+        // Simply put the new content, which will overwrite any existing file
+        const putCommand = new PutObjectCommand({
+            Bucket: bucketName,
+            Key: key,
+            Body: content,
+            ContentType: 'text/csv'
+        });
+
+        await s3Client.send(putCommand);
+        console.log(`Updated CSV in bucket: ${bucketName}, key: ${key}`);
+    } catch (error) {
+        console.error(`Error updating CSV in S3:`, error);
+        throw new Error(`Failed to update CSV in S3: ${error instanceof Error ? error.message : String(error)}`);
+    }
+};
+
 export {s3Client, LIVE_TRADES_BUCKET_NAME};
 
