@@ -3,6 +3,14 @@ import {useEffect, useState} from 'react';
 import {TradeData} from './types';
 import {getSignedS3Url, LIVE_TRADES_BUCKET_NAME, readCsvFromS3WithSignedUrl} from "./services/S3Service.ts";
 import Papa from 'papaparse';
+import '@aws-amplify/ui-react/styles.css';
+
+// Add to your imports
+import { Button, Card, Flex, Heading, Text, View } from '@aws-amplify/ui-react';
+
+
+
+
 
 interface TradesTableProps {
     symbol?: string;
@@ -21,6 +29,28 @@ export const TradesTable: React.FC<TradesTableProps> = ({
     const [symbol, setSymbol] = useState<string>(propSymbol || '');
     const [loading, setLoading] = useState<boolean>(!!tradesUrl);
     const [error, setError] = useState<string | null>(null);
+
+// State to control dialog visibility and track row to be deleted
+    const [deleteConfirmOpen, setDeleteConfirmOpen] = useState<boolean>(false);
+    const [rowToDelete, setRowToDelete] = useState<number | null>(null);
+
+// Single function to handle opening the delete confirmation dialog
+    const handleDeleteRow = (index: number) => {
+        setRowToDelete(index);
+        setDeleteConfirmOpen(true);
+    };
+
+// Function to handle the actual deletion
+    const confirmDelete = () => {
+        if (rowToDelete !== null) {
+            // Perform your delete operation here using rowToDelete
+            console.log(`Deleting row at index: ${rowToDelete}`);
+
+            // Reset states after deletion
+            setDeleteConfirmOpen(false);
+            setRowToDelete(null);
+        }
+    };
 
     useEffect(() => {
         // Update state when prop changes directly
@@ -236,10 +266,60 @@ export const TradesTable: React.FC<TradesTableProps> = ({
                         <td>{trade.tickoffset}</td>
                         <td>{trade.tradeduration}</td>
                         <td>{trade.outoftime}</td>
-                    </tr>))}
+                    <td>
+                        <Button onClick={() => handleDeleteRow(index)}>
+                            Delete Item
+                        </Button>
+
+                    </td>
+
+                </tr>))}
                 </tbody>
             </table>
-        </div>);
+            {deleteConfirmOpen && (
+                <View
+                    position="fixed"
+                    top="0"
+                    left="0"
+                    width="100%"
+                    height="100%"
+                    backgroundColor="rgba(0, 0, 0, 0.5)"
+                    style={{
+                        zIndex: 999,
+                        display: "flex",
+                        justifyContent: "center",
+                        alignItems: "center"
+                    }}
+                >
+                    <Card
+                        padding="2rem"
+                        width="400px"
+                        backgroundColor="white"
+                        boxShadow="0px 4px 12px rgba(0, 0, 0, 0.15)"
+                        borderRadius="8px"
+                        style={{ // Add the style prop
+                            opacity: 1 // Explicitly set opacity to 1 (fully opaque) here
+                            // You could even try '1 !important' for testing, but avoid !important in production if possible
+                        }}
+                    >
+                        <Heading level={4}>Confirm Delete</Heading>
+                        <Text>
+                            Are you sure you want to delete this trade setup? This action cannot be undone.
+                        </Text>
+                        <Flex justifyContent="flex-end" gap="0.5rem" marginTop="1rem">
+                            <Button onClick={() => setDeleteConfirmOpen(false)}>
+                                Cancel
+                            </Button>
+                            <Button variation="destructive" onClick={confirmDelete}>
+                                Delete
+                            </Button>
+                        </Flex>
+                    </Card>
+                </View>
+            )}
+        </div>
+    );
+
 };
 
 export default TradesTable;
