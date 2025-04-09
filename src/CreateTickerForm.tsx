@@ -4,9 +4,8 @@ import { createNewTicker } from './services/S3Service';
 
 interface CreateTickerFormProps {
     onTickerCreated: (symbol: string) => void;
-    broker: string;  // Add this line
+    broker: string;
 }
-
 
 const CreateTickerForm: React.FC<CreateTickerFormProps> = ({ onTickerCreated, broker }) => {
     const [newSymbol, setNewSymbol] = useState<string>('');
@@ -19,7 +18,7 @@ const CreateTickerForm: React.FC<CreateTickerFormProps> = ({ onTickerCreated, br
         setError(null);
         setSuccessMessage(null);
 
-        // Validate input
+        // Validate only the base symbol (user input)
         const symbolPattern = /^[A-Z]{1,5}$/;
         if (!symbolPattern.test(newSymbol)) {
             setError("Symbol must be 1-5 uppercase letters (e.g., AAPL, MSFT)");
@@ -29,16 +28,32 @@ const CreateTickerForm: React.FC<CreateTickerFormProps> = ({ onTickerCreated, br
         setIsCreating(true);
 
         try {
-            await createNewTicker(newSymbol, broker);  // Pass the broker here
-            setSuccessMessage(`Ticker ${newSymbol} successfully created!`);
+            // Create the long position ticker
+            const longSymbol = `${newSymbol}-long`;
+            await createNewTicker(longSymbol, broker);
+
+            // Create the short position ticker
+            const shortSymbol = `${newSymbol}-short`;
+            await createNewTicker(shortSymbol, broker);
+
+            setSuccessMessage(`Tickers ${longSymbol} and ${shortSymbol} successfully created!`);
             setNewSymbol(''); // Clear the input
-            onTickerCreated(newSymbol); // Notify parent component
+
+            // Notify parent component - passing the base symbol
+            onTickerCreated(newSymbol);
         } catch (err) {
-            setError(`Failed to create ticker: ${err instanceof Error ? err.message : String(err)}`);
+            // Check if the error is from the S3Service validation
+            const errorMessage = err instanceof Error ? err.message : String(err);
+
+            // If this is the case, provide a clearer message about what's happening
+            if (errorMessage.includes("Symbol must be")) {
+                setError("Internal validation error: Please contact the developer to update the S3Service validation.");
+            } else {
+                setError(`Failed to create tickers: ${errorMessage}`);
+            }
         } finally {
             setIsCreating(false);
         }
-
     };
 
     return (
@@ -64,9 +79,15 @@ const CreateTickerForm: React.FC<CreateTickerFormProps> = ({ onTickerCreated, br
                     disabled={isCreating || !newSymbol}
                     className="create-button"
                 >
-                    {isCreating ? 'Creating...' : 'Create Ticker'}
+                    {isCreating ? 'Creating...' : 'Create Long/Short Tickers'}
                 </button>
             </form>
+
+            <div className="form-help">
+                <small>
+                    This will create two entries: {newSymbol ? `${newSymbol}-long and ${newSymbol}-short` : 'SYMBOL-long and SYMBOL-short'}
+                </small>
+            </div>
 
             {error && <div className="error">{error}</div>}
             {successMessage && <div className="success">{successMessage}</div>}

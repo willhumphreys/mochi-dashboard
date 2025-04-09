@@ -247,7 +247,8 @@ export const getLiveTradeSymbols = async (broker: string, forceRefresh: boolean 
             .map(prefix => {
                 const prefixStr = prefix.Prefix || '';
                 // Extract the symbol part from 'brokers/darwinex/symbols/AAPL/'
-                const match = prefixStr.match(/^brokers\/[\w-]+\/symbols\/([A-Z]+)\/$/);
+                const match = prefixStr.match(/^brokers\/[\w-]+\/symbols\/([A-Z]+-?(long|short)?)\/$/);
+
                 return match ? match[1] : null;
             })
             .filter((symbol): symbol is string => symbol !== null)
@@ -484,9 +485,9 @@ export const fetchLiveTradesForSymbol = async (symbol: string, broker: string): 
 export const createNewTicker = async (symbol: string, broker: string): Promise<void> => {
     try {
         // Validate the symbol format
-        const symbolPattern = /^[A-Z]{1,5}$/;
+        const symbolPattern = /^[A-Z]{1,5}(-long|-short)?$/;
         if (!symbolPattern.test(symbol)) {
-            throw new Error("Symbol must be 1-5 uppercase letters");
+            throw new Error("Symbol must be 1-5 uppercase letters, optionally followed by '-long' or '-short'");
         }
 
         // Validate broker is provided
