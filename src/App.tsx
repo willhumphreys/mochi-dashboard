@@ -99,11 +99,12 @@ function App() {
                     />}
                     visualizationComponent={
                         selectedStrategy ? (
-                            <StrategyVisualization selectedStrategy={selectedStrategy} />
+                            <StrategyVisualization selectedStrategy={selectedStrategy} datasource="polygon" />
                         ) : selectedSymbol ? (
                             <MergedTable
                                 symbol={selectedSymbol}
                                 onRowSelect={handleStrategySelect}
+                                datasource="polygon"
                             />
                         ) : null
                     }

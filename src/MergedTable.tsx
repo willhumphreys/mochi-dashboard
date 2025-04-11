@@ -7,10 +7,11 @@ import {getDirectS3Url, getS3ImageUrl} from "./services/S3Service";
 interface MergedTableProps {
     onRowSelect: (row: MergedData) => void;
     symbol?: string; // New prop to allow passing a symbol
+    datasource: string;
     data?: MergedData[]; // Optional pre-loaded data
 }
 
-const MergedTable = ({onRowSelect, symbol = "AAPL_polygon_min", data}: MergedTableProps) => {
+const MergedTable = ({onRowSelect, symbol, data, datasource}: MergedTableProps) => {
     const [mergedData, setMergedData] = useState<MergedData[]>([]);
     const [isLoading, setIsLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
@@ -33,8 +34,8 @@ const MergedTable = ({onRowSelect, symbol = "AAPL_polygon_min", data}: MergedTab
                 setError(null);
 
                 // Define the S3 paths for the CSV files using the provided symbol
-                const filteredSetupsKey = `${symbol}_polygon_min/filtered-setups.csv`;
-                const aggregatedSummaryKey = `${symbol}_polygon_min/aggregated_filtered_summary.csv`;
+                const filteredSetupsKey = `${symbol}_${datasource}_min/filtered-setups.csv`;
+                const aggregatedSummaryKey = `${symbol}_${datasource}_min/aggregated_filtered_summary.csv`;
 
                 // Get URLs for both CSV files
                 let filteredSetupsUrl: string;

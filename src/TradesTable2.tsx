@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import { getSignedS3Url, LIVE_TRADES_BUCKET_NAME, readCsvFromS3WithSignedUrl } from "./services/S3Service.ts";
 import Papa from 'papaparse';
+import {DEFAULT_DATASOURCE} from "./config/datasourceConfig.ts";
 
 // Define the interface for the new data format
 interface TradeResultData {
@@ -16,14 +17,14 @@ interface TradeResultData {
 interface TradesTable2Props {
     symbol?: string;
     tradeData?: TradeResultData[];
-    broker?: string;
+    datasource?: string;
     tradesUrl?: string;
 }
 
 export const TradesTable2: React.FC<TradesTable2Props> = ({
                                                               symbol: propSymbol,
                                                               tradeData: propTradeData,
-                                                              broker = 'Unknown',
+                                                              datasource = DEFAULT_DATASOURCE,
                                                               tradesUrl
                                                           }) => {
     const [tradeData, setTradeData] = useState<TradeResultData[]>(propTradeData || []);
@@ -197,7 +198,7 @@ export const TradesTable2: React.FC<TradesTable2Props> = ({
 
     return (
         <div className="trades-table-container">
-            <h3>{symbol} Trade Results {broker ? `(${broker})` : ''}</h3>
+            <h3>{symbol} Trade Results {datasource ? `(${datasource})` : ''}</h3>
 
             <div className="summary">
                 <p>Total trades: {tradeData.length}</p>

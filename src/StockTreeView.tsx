@@ -190,7 +190,7 @@ const StockTreeView = ({onRowSelect, onSymbolSelect}: StockTreeViewProps) => {
                     profit_to_max_drawdown_ratio: setupRow.profit_to_max_drawdown_ratio,
                     profit_to_risk_ratio: setupRow.profit_to_risk_ratio,
                     profit_factor: setupRow.profit_factor,
-                    Symbol: "AAPL", // Adding the symbol
+                    Symbol: symbol,
                     kelly_fraction: setupRow.kelly_fraction,
                     coefficient_of_variation: setupRow.coefficient_of_variation,
                     sortino_ratio: setupRow.sortino_ratio,

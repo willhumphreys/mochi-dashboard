@@ -3,12 +3,16 @@ import { MergedData, TraderConfigDetails } from "./types";
 import { getS3ImageUrl, getDirectS3Url } from "./services/S3Service";
 import { TradesTable2 } from "./TradesTable2";
 
+// Add to imports
+import { getSymbolFolderName, getSymbolFilePrefix } from "./config/datasourceConfig";
+
 interface StrategyVisualizationProps {
     selectedStrategy: MergedData | null;
+    datasource?: string; // New prop
 }
 
-const StrategyVisualization = ({ selectedStrategy }: StrategyVisualizationProps) => {
-    const [imageUrl, setImageUrl] = useState<string | null>(null);
+const StrategyVisualization = (
+    { selectedStrategy,  datasource }: StrategyVisualizationProps) => {const [imageUrl, setImageUrl] = useState<string | null>(null);
     const [tradesUrl, setTradesUrl] = useState<string | null>(null);
     const [loading, setLoading] = useState<boolean>(false);
     const [error, setError] = useState<string | null>(null);
@@ -45,9 +49,6 @@ const StrategyVisualization = ({ selectedStrategy }: StrategyVisualizationProps)
         }
     };
 
-
-    // Format percentage function
-    // Format percentage function
     const formatPercent = (value: number | undefined | null, decimals: number = 2): string => {
         if (value === undefined || value === null) return "N/A";
 
@@ -152,40 +153,35 @@ const StrategyVisualization = ({ selectedStrategy }: StrategyVisualizationProps)
         fetchTraderConfig();
     }, [selectedStrategy]);
 
-    // Function to construct the S3 key from selected strategy
-    const constructGraphS3Key = (strategy: MergedData): string => {
-        if (!strategy) {
-            return "";
-        }
+    // Update your key construction functions
+    const constructGraphS3Key = (strategy: MergedData): string | null => {
+        if (!strategy || !strategy.Symbol) return null;
 
-        // Extract the symbol
-        const symbol = strategy.Symbol + '_polygon_min';
+        // Use the helper function to get the folder name with datasource
+        const symbolFolder = getSymbolFolderName(strategy.Symbol, datasource);
 
-        const scenarioString = strategy.Scenario;
-
-        // Construct the final key format: symbol/graphs/symbol_scenarioString_traderID.png
-        return `${symbol}/graphs/${symbol}_${scenarioString}_${strategy.TraderID}.png`;
+        return `${symbolFolder}/graphs/${symbolFolder}_${strategy.Scenario}_${strategy.TraderID}.png`;
     };
 
-    if (!selectedStrategy) {
-        return <div className="strategy-placeholder">Select a strategy to view details</div>;
-    }
 
-    // Function to construct the S3 key from selected strategy
-    const constructTradeS3Key = (strategy: MergedData): string => {
-        if (!strategy) {
-            return "";
-        }
+    const constructTradeS3Key = (strategy: MergedData): string | null => {
+        if (!strategy || !strategy.Symbol) return null;
 
-        // Extract the symbol
-        const symbol = strategy.Symbol + '_polygon_min';
+        // Use the helper function to get the folder name with datasource
+        const symbolFolder = getSymbolFolderName(strategy.Symbol, datasource);
 
+        // Use the helper function to get the file prefix with datasource
+        const filePrefix = getSymbolFilePrefix(strategy.Symbol, datasource);
+
+        // Use the pre-existing scenario string instead of constructing it
+        // Assuming strategy.scenarioString contains the full parameter string
         const scenarioString = strategy.Scenario;
 
-        // Construct the final key format: symbol/graphs/symbol_scenarioString_traderID.png
-        return `${symbol}/trades/${symbol}_${scenarioString}_${strategy.TraderID}.csv`;
+        // Return the constructed key with the trader ID
+        return `${symbolFolder}/trades/${filePrefix}_${scenarioString}_${strategy.TraderID}.csv`;
     };
 
+// Keep your existing URL construction pattern but just add the datasource properly
     if (!selectedStrategy) {
         return <div className="strategy-placeholder">Select a strategy to view details</div>;
     }
@@ -485,7 +481,13 @@ const StrategyVisualization = ({ selectedStrategy }: StrategyVisualizationProps)
                     </div>
                 )}
 
-                {tradesUrl && <TradesTable2 tradesUrl={tradesUrl} />}
+                {tradesUrl && (
+                    <TradesTable2
+                        symbol={selectedStrategy?.Symbol}
+                        tradesUrl={tradesUrl}
+                        datasource={datasource}
+                    />
+                )}
 
             </div>
         </div>
