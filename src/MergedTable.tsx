@@ -92,7 +92,7 @@ const MergedTable = ({onRowSelect, symbol, data, datasource}: MergedTableProps) 
                         ProfitFactor: summaryRow?.ProfitFactor || 0,
                         CompositeScore: summaryRow?.CompositeScore || 0,
                         RiskRewardBalance: summaryRow?.RiskRewardBalance || 0,
-                        Setup: setupRow.Setup,
+                        Setup: setupRow.Rank+ "," + setupRow.dayofweek + "," +  setupRow.hourofday + "," +  setupRow.stop + "," + setupRow.limit + "," + setupRow.tickoffset + "," + setupRow.tradeduration + "," + setupRow.outoftime,
                         totalprofit: setupRow.totalprofit,
                         tradecount: setupRow.tradecount || 0,
                         besttrade: setupRow.besttrade || 0,

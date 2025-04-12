@@ -14,7 +14,6 @@ export interface AggregatedSummaryRow {
 export interface FilteredSetupRow {
     Scenario: string;
     TraderID: number;
-    Setup: string;
     Rank: number;
     totalprofit: number;
     tradecount: number;
