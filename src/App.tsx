@@ -8,7 +8,7 @@ import Dashboard from "./Dashboard";
 import DashboardTitle from "./DashboardTitle";
 import MergedTable from "./MergedTable";
 import BacktestRequest from './BacktestRequest';
-import {LiveTradesViewer} from './LiveTradesViewer';
+import {SetupsViewer} from './SetupsViewer.tsx';
 import BrokerManager from './BrokerManager.tsx'; // Import the new component
 import { MergedData } from "./types";
 import Login from './Login';
@@ -19,7 +19,7 @@ function App() {
     const [selectedStrategy, setSelectedStrategy] = useState<MergedData | null>(null);
     const [selectedSymbol, setSelectedSymbol] = useState<string | null>(null);
     const [showBacktestForm, setShowBacktestForm] = useState<boolean>(false);
-    const [showLiveTrades, setShowLiveTrades] = useState<boolean>(false);
+    const [showSetups, setShowSetups] = useState<boolean>(false);
     const [showBrokerManager, setShowBrokerManager] = useState<boolean>(false); // New state for broker manager
 
     const handleStrategySelect = useCallback((row: MergedData) => {
@@ -32,7 +32,7 @@ function App() {
         setSelectedStrategy(null);
     }, []);
 
-    const handleLiveTradeSymbolChange = useCallback((symbol: string) => {
+    const handleSetupsSymbolChange = useCallback((symbol: string) => {
         console.log(`Live trades symbol changed to: ${symbol}`);
         // You can add additional handling here if needed
     }, []);
@@ -69,10 +69,10 @@ function App() {
                             {showBacktestForm ? 'Hide Backtest Form' : 'Show Backtest Form'}
                         </button>
                         <button
-                            onClick={() => setShowLiveTrades(!showLiveTrades)}
+                            onClick={() => setShowSetups(!showSetups)}
                             className="toggle-button"
                         >
-                            {showLiveTrades ? 'Hide Live Trades' : 'Show Live Trades'}
+                            {showSetups ? 'Hide Setups' : 'Show Setups'}
                         </button>
                         <button
                             onClick={() => setShowBrokerManager(!showBrokerManager)}
@@ -84,9 +84,9 @@ function App() {
                 </div>
 
                 {showBacktestForm && <BacktestRequest />}
-                {showLiveTrades && <LiveTradesViewer
+                {showSetups && <SetupsViewer
                     initialSymbol={selectedSymbol || 'AAPL'}
-                    onSymbolChange={handleLiveTradeSymbolChange}
+                    onSymbolChange={handleSetupsSymbolChange}
                 />}
                 {showBrokerManager && <BrokerManager />}
             </div>

@@ -4,8 +4,8 @@ import { fetchLiveTradesForSymbol, getLiveTradeSymbols } from './services/S3Serv
 import { TradeData } from "./types";
 import SymbolSelector from './SymbolSelector';
 import { getBrokers, BrokerInfo } from './services/BrokerService';
-import AddTradeForm from './AddTradeForm';
-import CreateTickerForm from './CreateTickerForm';
+import AddSetupForm from './AddSetupForm.tsx';
+import CreateSetupsForm from './CreateTickerForm';
 import TradeSummary from "./TradeSummary.tsx";
 import {TradesTable} from './LiveTradesTable';
 
@@ -15,7 +15,7 @@ interface LiveTradesViewerProps {
   initialBroker?: string;
 }
 
-export const LiveTradesViewer: React.FC<LiveTradesViewerProps> = ({
+export const SetupsViewer: React.FC<LiveTradesViewerProps> = ({
                                                                     initialSymbol = 'AAPL',
                                                                     initialBroker = '',
                                                                     onSymbolChange
@@ -132,42 +132,46 @@ export const LiveTradesViewer: React.FC<LiveTradesViewerProps> = ({
   return (
       <div className="live-trades-viewer">
         <div className="control-panel">
-          <h2>Live Trades Viewer</h2>
+          <h2>Setups</h2>
+          <div className="selectors-container">
+            <div className="selector-group">
+              <label htmlFor="broker-select">Broker:</label>
+              <select
+                  id="broker-select"
+                  value={broker}
+                  onChange={handleBrokerChange}
+                  disabled={loading || brokers.length === 0}
+              >
+                {brokers.length === 0 && (
+                    <option value="">Loading brokers...</option>
+                )}
+                {brokers.map(b => (
+                    <option key={b.name} value={b.name}>{b.displayName}</option>
+                ))}
+              </select>
+            </div>
 
-          <div className="broker-selector">
-            <label htmlFor="broker-select">Broker:</label>
-            <select
-                id="broker-select"
-                value={broker}
-                onChange={handleBrokerChange}
-                disabled={loading || brokers.length === 0}
-            >
-              {brokers.length === 0 && (
-                  <option value="">Loading brokers...</option>
-              )}
-              {brokers.map(b => (
-                  <option key={b.name} value={b.name}>{b.displayName}</option>
-              ))}
-            </select>
+            <div className="selector-group">
+
+              <SymbolSelector
+                  onSymbolChange={handleSymbolChange}
+                  availableSymbols={availableSymbols}
+                  currentSymbol={symbol}
+                  loading={loading}
+              />
+            </div>
           </div>
-
-          <SymbolSelector
-              onSymbolChange={handleSymbolChange}
-              availableSymbols={availableSymbols}
-              currentSymbol={symbol}
-              loading={loading}
-          />
 
           {/* Add these components with the handlers */}
           {broker && (
               <>
-                <AddTradeForm
+                <AddSetupForm
                     symbol={symbol}
                     broker={broker}
                     onTradeAdded={handleTradeAdded}
                 />
 
-                <CreateTickerForm
+                <CreateSetupsForm
                     broker={broker}
                     onTickerCreated={handleTickerCreated}
                 />

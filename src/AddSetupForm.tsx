@@ -10,7 +10,7 @@ interface AddTradeFormProps {
     disabled?: boolean;  // Add disabled prop
 }
 
-const AddTradeForm: React.FC<AddTradeFormProps> = ({
+const AddSetupForm: React.FC<AddTradeFormProps> = ({
                                                        symbol,
                                                        broker,
                                                        onTradeAdded,
@@ -83,7 +83,7 @@ const AddTradeForm: React.FC<AddTradeFormProps> = ({
                 outoftime: 0
             });
 
-            setSuccess(`Trade successfully added for ${symbol} with broker ${broker}`);
+            setSuccess(`Setup successfully added for ${symbol} with broker ${broker}`);
 
             onTradeAdded(newTrade);
 
@@ -94,7 +94,7 @@ const AddTradeForm: React.FC<AddTradeFormProps> = ({
             }, 2000);
 
         } catch (err) {
-            setError(`Failed to add trade: ${err instanceof Error ? err.message : String(err)}`);
+            setError(`Failed to add setup: ${err instanceof Error ? err.message : String(err)}`);
         } finally {
             setIsSubmitting(false);
         }
@@ -108,11 +108,11 @@ const AddTradeForm: React.FC<AddTradeFormProps> = ({
                     onClick={() => setIsFormOpen(true)}
                     disabled={disabled}  // Use the disabled prop
                 >
-                    Add New Trade
+                    Add New Setup
                 </button>
             ) : (
                 <div className="form-panel">
-                    <h3>Add New Trade for {symbol} with {broker}</h3>
+                    <h3>Add New Setup for {symbol} with {broker}</h3>
 
                     {error && <div className="error">{error}</div>}
                     {success && <div className="success">{success}</div>}
@@ -257,4 +257,4 @@ const AddTradeForm: React.FC<AddTradeFormProps> = ({
     );
 };
 
-export default AddTradeForm;
+export default AddSetupForm;

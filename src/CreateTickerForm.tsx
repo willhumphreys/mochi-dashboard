@@ -1,13 +1,13 @@
 // src/CreateTickerForm.tsx
-import { useState } from 'react';
-import { createNewTicker } from './services/S3Service';
+import {useState} from 'react';
+import {createNewTicker} from './services/S3Service';
 
 interface CreateTickerFormProps {
     onTickerCreated: (symbol: string) => void;
     broker: string;
 }
 
-const CreateTickerForm: React.FC<CreateTickerFormProps> = ({ onTickerCreated, broker }) => {
+const CreateTickerForm: React.FC<CreateTickerFormProps> = ({onTickerCreated, broker}) => {
     const [newSymbol, setNewSymbol] = useState<string>('');
     const [isCreating, setIsCreating] = useState<boolean>(false);
     const [error, setError] = useState<string | null>(null);
@@ -56,43 +56,40 @@ const CreateTickerForm: React.FC<CreateTickerFormProps> = ({ onTickerCreated, br
         }
     };
 
-    return (
-        <div className="create-ticker-form">
-            <h3>Create New Ticker</h3>
-
-            <form onSubmit={handleSubmit}>
-                <div className="form-group">
-                    <label htmlFor="new-symbol">Ticker Symbol:</label>
-                    <input
-                        id="new-symbol"
-                        type="text"
-                        value={newSymbol}
-                        onChange={(e) => setNewSymbol(e.target.value.toUpperCase())}
-                        placeholder="e.g., AAPL"
-                        disabled={isCreating}
-                        maxLength={5}
-                    />
-                </div>
-
+    return (<div className="create-setups-form">
+        <form onSubmit={handleSubmit}>
+            <div className="form-controls">
+                <input
+                    id="new-symbol"
+                    type="text"
+                    value={newSymbol}
+                    onChange={(e) => setNewSymbol(e.target.value.toUpperCase())}
+                    placeholder="e.g., AAPL"
+                    disabled={isCreating}
+                    maxLength={5}
+                    className="symbol-input"
+                />
                 <button
                     type="submit"
                     disabled={isCreating || !newSymbol}
                     className="create-button"
                 >
-                    {isCreating ? 'Creating...' : 'Create Long/Short Tickers'}
+                    {isCreating ? 'Creating...' : 'Create Long/Short Setups'}
                 </button>
-            </form>
+            </div>
+        </form>
 
-            <div className="form-help">
+
+        <div className="form-help">
                 <small>
-                    This will create two entries: {newSymbol ? `${newSymbol}-long and ${newSymbol}-short` : 'SYMBOL-long and SYMBOL-short'}
+                    This will create two
+                    entries: {newSymbol ? `${newSymbol}-long and ${newSymbol}-short` : 'SYMBOL-long and SYMBOL-short'}
                 </small>
             </div>
 
             {error && <div className="error">{error}</div>}
             {successMessage && <div className="success">{successMessage}</div>}
-        </div>
-    );
+        </div>);
 };
 
 export default CreateTickerForm;
