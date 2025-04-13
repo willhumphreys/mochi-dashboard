@@ -17,6 +17,8 @@ const StrategyVisualization = (
     const [loading, setLoading] = useState<boolean>(false);
     const [error, setError] = useState<string | null>(null);
     const [usedDirectUrl, setUsedDirectUrl] = useState<boolean>(false);
+    const [copySuccess, setCopySuccess] = useState(false);
+
 
     // Add state for trader configuration
     const [, setTraderConfig] = useState<TraderConfigDetails>({
@@ -29,6 +31,19 @@ const StrategyVisualization = (
         tradeduration: 0,
         outoftime: 0
     });
+
+    const copySetupToClipboard = async () => {
+        if (selectedStrategy?.Setup) {
+            try {
+                await navigator.clipboard.writeText(selectedStrategy.Setup);
+                setCopySuccess(true);
+                setTimeout(() => setCopySuccess(false), 1500);
+            } catch (err) {
+                console.error("Failed to copy setup value: ", err);
+            }
+        }
+    };
+
 
     // State management handled directly in the fetchTraderConfig function
 
@@ -211,8 +226,26 @@ const StrategyVisualization = (
                         </tr>
                         <tr>
                             <th>Setup</th>
-                            <td colSpan={3}>{selectedStrategy.Setup}</td>
+                            <td colSpan={3}>
+                                {selectedStrategy.Setup}
+                                <button
+                                    onClick={copySetupToClipboard}
+                                    className="copy-button"
+                                    title="Copy setup value"
+                                    style={{
+                                        marginLeft: '8px',
+                                        background: 'none',
+                                        border: 'none',
+                                        cursor: 'pointer',
+                                        padding: '2px 6px',
+                                        borderRadius: '4px'
+                                    }}
+                                >
+                                    {copySuccess ? '✓' : '📋'}
+                                </button>
+                            </td>
                         </tr>
+
                         </tbody>
                     </table>
                 </div>

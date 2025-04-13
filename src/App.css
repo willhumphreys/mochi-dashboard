@@ -1252,3 +1252,333 @@ select option {
 .selector-group select {
   margin: 0; /* Remove any default margins */
 }
+
+/* add-setup-form.css */
+
+.setup-form-panel {
+  margin-top: 1rem;
+}
+
+.setup-form {
+  width: 100%;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 1rem;
+}
+
+.form-group label {
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+}
+
+.form-input, .form-select {
+  padding: 0.5rem;
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+  font-size: 1rem;
+}
+
+.form-input.disabled {
+  background-color: #e9ecef;
+  cursor: not-allowed;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.submit-button {
+  background-color: #007bff;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.submit-button:hover {
+  background-color: #0069d9;
+}
+
+.submit-button:disabled {
+  background-color: #6c757d;
+  cursor: not-allowed;
+}
+
+.cancel-button {
+  background-color: #6c757d;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.cancel-button:hover {
+  background-color: #5a6268;
+}
+
+.alert-success {
+  background-color: #d4edda;
+  color: #155724;
+  border: 1px solid #c3e6cb;
+}
+
+/* Responsive design for the form grid */
+@media (max-width: 992px) {
+  .form-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 576px) {
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* setups-viewer.css */
+
+.setups-viewer {
+  padding: 1rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.page-title {
+  font-size: 1.8rem;
+  color: #333;
+  margin-bottom: 1.5rem;
+  text-align: center;
+}
+
+.card {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  margin-bottom: 1.5rem;
+  overflow: hidden;
+}
+
+.card-header {
+  padding: 1rem;
+  background: #f8f9fa;
+  border-bottom: 1px solid #e9ecef;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.card-header h3 {
+  margin: 0;
+  font-size: 1.2rem;
+  color: #495057;
+}
+
+.card-body {
+  padding: 1.5rem;
+}
+
+.selectors-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.selector-group {
+  display: flex;
+  flex-direction: column;
+  min-width: 200px;
+  flex: 1;
+}
+
+.selector-group label {
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+}
+
+.form-select {
+  padding: 0.5rem;
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+  font-size: 1rem;
+}
+
+.broker-badge {
+  background: #e9ecef;
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.875rem;
+  color: #495057;
+}
+
+.setup-actions {
+  margin-bottom: 1.5rem;
+}
+
+.alert {
+  padding: 1rem;
+  border-radius: 4px;
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.alert-error {
+  background-color: #f8d7da;
+  color: #721c24;
+  border: 1px solid #f5c6cb;
+}
+
+.error-icon {
+  font-size: 1.25rem;
+}
+
+.no-data-message {
+  text-align: center;
+  padding: 2rem 0;
+  color: #6c757d;
+}
+
+.no-data-message p {
+  margin: 0.5rem 0;
+}
+
+.loading-indicator {
+  text-align: center;
+  padding: 1rem 0;
+  color: #6c757d;
+}
+
+.open-form-button {
+  background-color: #007bff;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 1rem;
+}
+
+.open-form-button:hover {
+  background-color: #0069d9;
+}
+
+.open-form-button:disabled {
+  background-color: #6c757d;
+  cursor: not-allowed;
+}
+
+/* Styles for the Create Ticker form */
+.create-setups-form {
+  width: 100%;
+}
+
+.form-controls {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.symbol-input {
+  flex: 1;
+  padding: 0.5rem;
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+  font-size: 1rem;
+}
+
+.create-button {
+  background-color: #28a745;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.create-button:hover {
+  background-color: #218838;
+}
+
+.create-button:disabled {
+  background-color: #6c757d;
+  cursor: not-allowed;
+}
+
+.form-help {
+  color: #6c757d;
+  margin-bottom: 0.5rem;
+}
+
+.success {
+  color: #28a745;
+  margin-top: 0.5rem;
+}
+
+.error {
+  color: #dc3545;
+  margin-top: 0.5rem;
+}
+
+/* Styles for mobile responsiveness */
+@media (max-width: 768px) {
+  .selectors-container {
+    flex-direction: column;
+  }
+
+  .form-controls {
+    flex-direction: column;
+  }
+
+  .symbol-input, .create-button {
+    width: 100%;
+  }
+}
+
+.shorthand-parser {
+  margin-bottom: 20px;
+  padding: 15px;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  border: 1px dashed #ccc;
+}
+
+.shorthand-input-container {
+  display: flex;
+  gap: 10px;
+  margin: 8px 0;
+}
+
+.parse-button {
+  padding: 6px 12px;
+  background-color: #6c757d;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.parse-button:hover {
+  background-color: #5a6268;
+}
+
+.helper-text {
+  color: #6c757d;
+  font-size: 0.8rem;
+  display: block;
+}
