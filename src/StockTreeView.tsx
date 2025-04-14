@@ -156,7 +156,7 @@ const StockTreeView = ({onRowSelect, onSymbolSelect}: StockTreeViewProps) => {
                     ProfitFactor: summaryRow?.ProfitFactor || 0,
                     CompositeScore: summaryRow?.CompositeScore || 0,
                     RiskRewardBalance: summaryRow?.RiskRewardBalance || 0,
-                    Setup: setupRow.Setup,
+                    Setup: `${setupRow.dayofweek},${setupRow.hourofday},${setupRow.stop},${setupRow.limit},${setupRow.tickoffset},${setupRow.tradeduration},${setupRow.outoftime}`,
                     totalprofit: setupRow.totalprofit,
                     tradecount: setupRow.tradecount,
                     besttrade: setupRow.besttrade,
