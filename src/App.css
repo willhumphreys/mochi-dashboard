@@ -1582,3 +1582,125 @@ select option {
   font-size: 0.8rem;
   display: block;
 }
+
+/* Backtest Form Styles */
+.backtest-container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px;
+  background-color: #f9f9f9;
+  border-radius: 4px;
+  border: 1px solid #eee;
+}
+
+.backtest-container h2 {
+  margin-top: 0;
+  margin-bottom: 20px;
+  color: #333;
+}
+
+.form-group {
+  margin-bottom: 15px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: 500;
+}
+
+.form-group input {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  box-sizing: border-box;
+}
+
+.date-presets {
+  margin-bottom: 20px;
+}
+
+.preset-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 5px;
+}
+
+.preset-buttons button {
+  padding: 6px 12px;
+  background-color: #f0f0f0;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.preset-buttons button:hover {
+  background-color: #e7e7e7;
+}
+
+.preset-buttons button.active {
+  background-color: #007bff;
+  color: white;
+  border-color: #0069d9;
+}
+
+.form-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.form-actions button {
+  padding: 8px 16px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.form-actions button:hover {
+  background-color: #0069d9;
+}
+
+.form-actions button:disabled {
+  background-color: #cccccc;
+  cursor: not-allowed;
+}
+
+.auth-warning {
+  padding: 10px;
+  margin-bottom: 20px;
+  background-color: #fff3cd;
+  color: #856404;
+  border: 1px solid #ffeeba;
+  border-radius: 4px;
+}
+
+.loading {
+  padding: 15px;
+  text-align: center;
+  font-style: italic;
+  color: #666;
+}
+
+.success-message {
+  padding: 15px;
+  margin-top: 20px;
+  background-color: #d4edda;
+  color: #155724;
+  border: 1px solid #c3e6cb;
+  border-radius: 4px;
+}
+
+.job-details {
+  margin-top: 10px;
+  padding: 10px;
+  background-color: #f8f9fa;
+  border-radius: 4px;
+  border: 1px solid #e9ecef;
+}

@@ -1,4 +1,3 @@
-// src/components/BacktestRequest.tsx
 import React, { useState } from 'react';
 import { fetchAuthSession } from 'aws-amplify/auth';
 import { useAuth } from './AuthContext';
@@ -22,32 +21,55 @@ interface BacktestErrorResponse {
 
 const BacktestRequest: React.FC = () => {
     const { isAuthenticated, isLoading } = useAuth();
+
     // Get today's date and format it as YYYY-MM-DD
     const today = new Date();
     const formattedToday = today.toISOString().split('T')[0];
 
-    // Calculate date 5 years ago minus 1 day
-    const fiveYearsAgo = new Date();
-    fiveYearsAgo.setFullYear(fiveYearsAgo.getFullYear() - 5);
-    fiveYearsAgo.setDate(fiveYearsAgo.getDate() + 1);
-    const formattedFromDate = fiveYearsAgo.toISOString().split('T')[0];
+    // Calculate date presets, ensuring to start from the next full day
+    const calculateFromDate = (yearsBack: number): string => {
+        const date = new Date();
+        date.setFullYear(date.getFullYear() - yearsBack);
 
+        // Skip the partial day and start from the next full day
+        date.setDate(date.getDate() + 1);
+
+        return date.toISOString().split('T')[0];
+    };
+
+    // Date presets
+    const datePresets = {
+        '1 Year': calculateFromDate(1),
+        '5 Years': calculateFromDate(5),
+        '10 Years': calculateFromDate(10),
+        '20 Years': calculateFromDate(20),
+        '30 Years': calculateFromDate(30)
+    };
+
+    // Default to 5 years
     const [params, setParams] = useState<BacktestParams>({
         ticker: 'TSLA',
-        from_date: formattedFromDate,
+        from_date: datePresets['5 Years'],
         to_date: formattedToday
     });
 
     const [result, setResult] = useState<BacktestSuccessResponse | null>(null);
     const [loading, setLoading] = useState<boolean>(false);
     const [error, setError] = useState<string | null>(null);
-    const [jobStatus, setJobStatus] = useState<'pending' | 'submitted' | 'error'>('pending');
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
         setParams({
             ...params,
             [name]: value
+        });
+    };
+
+    // Handle preset selection
+    const handlePresetSelect = (preset: keyof typeof datePresets) => {
+        setParams({
+            ...params,
+            from_date: datePresets[preset]
         });
     };
 
@@ -68,7 +90,6 @@ const BacktestRequest: React.FC = () => {
             setLoading(true);
             setError(null);
             setResult(null);
-            setJobStatus('pending');
 
             // Get the authentication token from Cognito
             const authSession = await fetchAuthSession();
@@ -79,9 +100,8 @@ const BacktestRequest: React.FC = () => {
             }
 
             // Make the backtest API request
-            // Change this line in your handleSubmit function
             const response = await fetch(
-                '/api/backtest', // Changed URL to use the proxy
+                '/api/backtest',
                 {
                     method: 'POST',
                     headers: {
@@ -91,7 +111,6 @@ const BacktestRequest: React.FC = () => {
                     body: JSON.stringify(params)
                 }
             );
-
 
             const data = await response.json();
 
@@ -103,12 +122,10 @@ const BacktestRequest: React.FC = () => {
 
             // Handle success response
             setResult(data as BacktestSuccessResponse);
-            setJobStatus('submitted');
             console.log('Backtest job submitted successfully:', data);
         } catch (err) {
             console.error('Backtest error:', err);
             setError(err instanceof Error ? err.message : String(err));
-            setJobStatus('error');
         } finally {
             setLoading(false);
         }
@@ -117,120 +134,97 @@ const BacktestRequest: React.FC = () => {
     const resetForm = () => {
         setResult(null);
         setError(null);
-        setJobStatus('pending');
     };
 
     return (
         <div className="backtest-container">
-            <h2>Run Stock Backtest</h2>
+            <h2>Run Backtest</h2>
 
             {!isAuthenticated && !isLoading && (
                 <div className="auth-warning">
-                    You need to be logged in to run backtests
+                    Please log in to run a backtest.
                 </div>
             )}
 
-            {jobStatus !== 'submitted' && (
-                <form onSubmit={handleSubmit} className="backtest-form">
-                    <div className="form-group">
-                        <label htmlFor="ticker">Ticker Symbol:</label>
-                        <input
-                            type="text"
-                            id="ticker"
-                            name="ticker"
-                            value={params.ticker}
-                            onChange={handleInputChange}
-                            placeholder="TSLA"
-                            required
-                        />
-                    </div>
+            <form onSubmit={handleSubmit}>
+                <div className="form-group">
+                    <label htmlFor="ticker">Stock Symbol:</label>
+                    <input
+                        type="text"
+                        id="ticker"
+                        name="ticker"
+                        value={params.ticker}
+                        onChange={handleInputChange}
+                        required
+                    />
+                </div>
 
-                    <div className="form-group">
-                        <label htmlFor="from_date">From Date:</label>
-                        <input
-                            type="date"
-                            id="from_date"
-                            name="from_date"
-                            value={params.from_date}
-                            onChange={handleInputChange}
-                            required
-                        />
-                    </div>
+                <div className="form-group">
+                    <label htmlFor="from_date">From Date:</label>
+                    <input
+                        type="date"
+                        id="from_date"
+                        name="from_date"
+                        value={params.from_date}
+                        onChange={handleInputChange}
+                        required
+                    />
+                </div>
 
-                    <div className="form-group">
-                        <label htmlFor="to_date">To Date:</label>
-                        <input
-                            type="date"
-                            id="to_date"
-                            name="to_date"
-                            value={params.to_date}
-                            onChange={handleInputChange}
-                            required
-                        />
-                    </div>
+                <div className="form-group">
+                    <label htmlFor="to_date">To Date:</label>
+                    <input
+                        type="date"
+                        id="to_date"
+                        name="to_date"
+                        value={params.to_date}
+                        onChange={handleInputChange}
+                        required
+                    />
+                </div>
 
-                    <button
-                        type="submit"
-                        className="submit-button"
-                        disabled={loading || isLoading || !isAuthenticated}
-                    >
-                        {loading ? 'Submitting Job...' : 'Run Backtest'}
+                <div className="date-presets">
+                    <label>Preset Time Ranges:</label>
+                    <div className="preset-buttons">
+                        {Object.keys(datePresets).map((preset) => (
+                            <button
+                                key={preset}
+                                type="button"
+                                onClick={() => handlePresetSelect(preset as keyof typeof datePresets)}
+                                className={params.from_date === datePresets[preset as keyof typeof datePresets] ? 'active' : ''}
+                            >
+                                {preset}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+
+                <div className="form-actions">
+                    <button type="submit" disabled={loading || !isAuthenticated}>
+                        {loading ? 'Submitting...' : 'Run Backtest'}
                     </button>
-                </form>
-            )}
+                    {result && <button type="button" onClick={resetForm}>New Backtest</button>}
+                </div>
+            </form>
+
+            {loading && <div className="loading">Submitting backtest job...</div>}
 
             {error && (
                 <div className="error-message">
-                    <h3>Error</h3>
+                    <h3>Error:</h3>
                     <p>{error}</p>
-                    <button onClick={resetForm} className="retry-button">
-                        Try Again
-                    </button>
-                </div>
-            )}
-
-            {loading && (
-                <div className="loading-indicator">
-                    <div className="spinner"></div>
-                    <p>Submitting backtest job, please wait...</p>
                 </div>
             )}
 
             {result && (
-                <div className="success-container">
-                    <h3>Job Successfully Submitted</h3>
+                <div className="success-message">
+                    <h3>Backtest Job Submitted:</h3>
+                    <p>{result.message}</p>
                     <div className="job-details">
-                        <div className="job-detail">
-                            <span className="detail-label">Status:</span>
-                            <span className="detail-value">{result.message}</span>
-                        </div>
-                        <div className="job-detail">
-                            <span className="detail-label">Ticker:</span>
-                            <span className="detail-value">{params.ticker}</span>
-                        </div>
-                        <div className="job-detail">
-                            <span className="detail-label">Date Range:</span>
-                            <span className="detail-value">{params.from_date} to {params.to_date}</span>
-                        </div>
-                        <div className="job-detail">
-                            <span className="detail-label">Group Tag:</span>
-                            <span className="detail-value highlight">{result.groupTag}</span>
-                        </div>
-                        <div className="job-detail">
-                            <span className="detail-label">Polygon Job ID:</span>
-                            <span className="detail-value">{result.polygonJobId}</span>
-                        </div>
-                        <div className="job-detail">
-                            <span className="detail-label">Enhance Job ID:</span>
-                            <span className="detail-value">{result.enhanceJobId}</span>
-                        </div>
+                        <p><strong>Group Tag:</strong> {result.groupTag}</p>
+                        <p><strong>Polygon Job ID:</strong> {result.polygonJobId}</p>
+                        <p><strong>Enhance Job ID:</strong> {result.enhanceJobId}</p>
                     </div>
-                    <p className="job-notice">
-                        Your backtest is now processing. You'll be notified when the results are ready.
-                    </p>
-                    <button onClick={resetForm} className="new-job-button">
-                        Submit Another Backtest
-                    </button>
                 </div>
             )}
         </div>
