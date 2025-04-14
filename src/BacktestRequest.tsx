@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { fetchAuthSession } from 'aws-amplify/auth';
 import { useAuth } from './AuthContext';
+import TickerSearch from './TickerSearch'; // Import the new component
 
 interface BacktestParams {
     ticker: string;
@@ -62,6 +63,14 @@ const BacktestRequest: React.FC = () => {
         setParams({
             ...params,
             [name]: value
+        });
+    };
+
+    // Handle ticker selection from TickerSearch component
+    const handleTickerSelect = (ticker: string) => {
+        setParams({
+            ...params,
+            ticker: ticker
         });
     };
 
@@ -149,13 +158,10 @@ const BacktestRequest: React.FC = () => {
             <form onSubmit={handleSubmit}>
                 <div className="form-group">
                     <label htmlFor="ticker">Stock Symbol:</label>
-                    <input
-                        type="text"
-                        id="ticker"
-                        name="ticker"
-                        value={params.ticker}
-                        onChange={handleInputChange}
-                        required
+                    {/* Replace the input with TickerSearch component */}
+                    <TickerSearch
+                        onTickerSelect={handleTickerSelect}
+                        initialValue={params.ticker}
                     />
                 </div>
 
