@@ -339,16 +339,24 @@ export const fetchStockSymbols = async (): Promise<string[]> => {
         const response = await s3Client.send(command);
         console.log("S3 ListObjectsV2 response received"); // Removed potentially large response log
 
-        // Extract stock symbols from common prefixes (like "AAPL_polygon_min/")
+        // Extract stock symbols from common prefixes (like "AAPL_polygon_min/" or "C:XAUUSD_polygon_min/")
         const symbols = (response.CommonPrefixes || [])
             .map(prefix => {
                 const prefixStr = prefix.Prefix || "";
-                // Updated Regex: Handles symbols like BRK.A or single letters more robustly
-                // Assumes format SYMBOL_something/
-                const match = prefixStr.match(/^([A-Z0-9.]+)(?:_.*)?\//);
-                return match ? match[1] : null;
+                // Updated Regex: Handles regular symbols, prefixed symbols like C:XAUUSD, and symbols with dots
+                // Assumes format [PREFIX:]SYMBOL_something/
+                const match = prefixStr.match(/^([A-Z0-9]+:)?([A-Z0-9.]+)(?:_.*)?\//);
+
+                if (!match) return null;
+
+                // If there's a prefix (like "C:"), include it in the returned symbol
+                if (match[1]) {
+                    return match[1] + match[2]; // Return format like "C:XAUUSD"
+                }
+
+                return match[2]; // Return just the symbol for regular cases
             })
-            .filter((symbol): symbol is string => symbol !== null); // Type guard to filter out nulls
+            .filter((symbol): symbol is string => symbol !== null); // Type guard to filter out nulls // Type guard to filter out nulls
 
         console.log("Extracted stock symbols:", symbols);
         return symbols;
@@ -526,31 +534,27 @@ export const createNewTicker = async (symbol: string, broker: string): Promise<v
  * @param region - AWS region (optional, defaults to client's region)
  * @returns Promise that resolves to a pre-signed URL
  */
-export const getSignedS3Url = async (
-    bucketName: string,
-    key: string,
-    expiresIn: number = 900, // 15 minutes default
-    region?: string
-): Promise<string> => {
+export const getSignedS3Url = async (bucketName: string, key: string, expiresIn: number = 3600): Promise<string> => {
     try {
-        // Create a new client with the specified region if provided
-        const client = region ? new S3Client({ region }) : s3Client;
+        console.log(`Generating signed URL for ${bucketName}/${key} (expires in ${expiresIn}s)`);
 
-        // Create the command to get the object
+        const decodedKey = decodeURIComponent(key);
+
+
         const command = new GetObjectCommand({
             Bucket: bucketName,
-            Key: key
+            Key: decodedKey
         });
 
-        // Generate the signed URL
-        const signedUrl = await getSignedUrl(client, command, { expiresIn });
-
+        const signedUrl = await getSignedUrl(s3Client, command, { expiresIn });
+        console.log(`Generated signed URL successfully`);
         return signedUrl;
     } catch (error) {
         console.error(`Error generating signed URL for ${bucketName}/${key}:`, error);
-        throw new Error(`Failed to generate signed URL: ${error instanceof Error ? error.message : String(error)}`);
+        throw error;
     }
 };
+
 
 /**
  * Reads and parses a CSV file from S3 using a pre-signed URL
@@ -574,9 +578,7 @@ export const readCsvFromS3WithSignedUrl = async <T>(
         // Generate a signed URL for the S3 object
         const signedUrl = await getSignedS3Url(
             bucketName,
-            key,
-            options.expiresIn,
-            options.region
+            key
         );
 
         // Fetch the content using the signed URL
@@ -635,8 +637,8 @@ export const getS3ObjectWithSignedUrl = async (
         const signedUrl = await getSignedS3Url(
             bucketName,
             key,
-            options.expiresIn,
-            options.region
+            options.expiresIn
+
         );
 
         // Fetch the content using the signed URL
@@ -709,12 +711,8 @@ export const fetchFromSignedUrl = async <T>(
             key = url.pathname.substring(1); // Remove leading slash
         }
 
-        // Get the region from the hostname
-        const regionMatch = url.hostname.match(/s3[.-]([a-z0-9-]+)/);
-        const region = regionMatch ? regionMatch[1] : 'eu-central-1';
-
         // Generate a signed URL
-        const signedUrl = await getSignedS3Url(bucketName, key, 900, region);
+        const signedUrl = await getSignedS3Url(bucketName, key, 900);
 
         // Fetch the content
         const response = await fetch(signedUrl);
@@ -757,7 +755,7 @@ export const convertToSignedUrl = async (
         const url = new URL(directUrl);
         const hostParts = url.hostname.split('.');
 
-        let bucketName, key, region;
+        let bucketName, key;
 
         // Determine URL format and extract components
         if (hostParts[0].endsWith('s3')) {
@@ -766,19 +764,17 @@ export const convertToSignedUrl = async (
             bucketName = pathParts[0];
             key = pathParts.slice(1).join('/');
 
-            // Extract region from hostname
-            region = hostParts[1];
+
         } else {
             // Virtual-hosted style (bucket-name.s3.region.amazonaws.com/key)
             bucketName = hostParts[0];
             key = url.pathname.substring(1); // Remove leading slash
 
-            // Extract region from hostname
-            region = hostParts[2];
+
         }
 
         // Generate a signed URL for the object
-        return await getSignedS3Url(bucketName, key, expiresIn, region);
+        return await getSignedS3Url(bucketName, key, expiresIn);
     } catch (error) {
         console.error(`Error converting to signed URL: ${directUrl}`, error);
         throw new Error(`Failed to convert to signed URL: ${error instanceof Error ? error.message : String(error)}`);

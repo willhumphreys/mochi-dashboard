@@ -55,15 +55,17 @@ export const TradesTable2: React.FC<TradesTable2Props> = ({
                 setLoading(true);
                 setError(null);
 
-                // Extract symbol from URL if not provided as prop
-                if (!propSymbol) {
-                    const urlParts = tradesUrl.split('/');
-                    const fileName = urlParts[urlParts.length - 1];
-                    const symbolMatch = fileName.match(/^([A-Z0-9]+)_/);
-                    if (symbolMatch && symbolMatch[1]) {
-                        setSymbol(symbolMatch[1]);
-                    }
-                }
+                // // Extract symbol from URL if not provided as prop
+                // if (!propSymbol) {
+                //     const urlParts = tradesUrl.split('/');
+                //     const fileName = urlParts[urlParts.length - 1];
+                //     const symbolMatch = fileName.match(/^([A-Z0-9]+)_/);
+                //     if (symbolMatch && symbolMatch[1]) {
+                //         setSymbol(symbolMatch[1]);
+                //     }
+                // }
+
+                console.log("Fetching CSV AAA from URL:", tradesUrl);
 
                 let csvData: Record<string, string | number | boolean | undefined>[];
 
