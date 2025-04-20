@@ -83,7 +83,7 @@ const TickerSearch: React.FC<TickerSearchProps> = ({ onTickerSelect, initialValu
                 }
 
                 // Define markets to fetch
-                const markets = ['fx', 'stocks'];
+                const markets = ['fx', 'stocks', 'crypto'];
 
                 // Process each market
                 for (const market of markets) {
