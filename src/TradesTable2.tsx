@@ -12,6 +12,7 @@ interface TradeResultData {
     Profit: number;
     RunningTotalProfit: number;
     State: string;
+    PriceCrossed: boolean;
 }
 
 interface TradesTable2Props {
@@ -166,7 +167,8 @@ export const TradesTable2: React.FC<TradesTable2Props> = ({
                         ClosingPrice: safeParseFloat(row.ClosingPrice),
                         Profit: safeParseFloat(row.Profit),
                         RunningTotalProfit: safeParseFloat(row.RunningTotalProfit),
-                        State: safeString(row.State)
+                        State: safeString(row.State),
+                        PriceCrossed: row.PriceCrossed === 'True'
                     };
                 });
 
@@ -221,6 +223,7 @@ export const TradesTable2: React.FC<TradesTable2Props> = ({
                     <th>Profit</th>
                     <th>Running Total</th>
                     <th>Exit Reason</th>
+                    <th>Valid</th>
                 </tr>
                 </thead>
                 <tbody>
@@ -236,6 +239,7 @@ export const TradesTable2: React.FC<TradesTable2Props> = ({
                             {trade.RunningTotalProfit}
                         </td>
                         <td>{trade.State}</td>
+                        <td>{trade.PriceCrossed}</td>
                     </tr>
                 ))}
                 </tbody>
