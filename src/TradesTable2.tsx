@@ -239,7 +239,7 @@ export const TradesTable2: React.FC<TradesTable2Props> = ({
                             {trade.RunningTotalProfit}
                         </td>
                         <td>{trade.State}</td>
-                        <td>{trade.PriceCrossed}</td>
+                        <td>{trade.PriceCrossed ? '✅' : '❌'}</td>
                     </tr>
                 ))}
                 </tbody>
