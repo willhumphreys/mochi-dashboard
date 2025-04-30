@@ -11,22 +11,23 @@ interface ScalingParamsSelectorProps {
 
 const presets = [
   {
-    label: 'Commodities - Short: 14, Long: 50, Alpha: 0.5',
-    data: { shortATRPeriod: 14, longATRPeriod: 50, alpha: 0.5 },
+    label: 'Commodities - Long Setup: Short: 10, Long: 40, Alpha: 0.6',
+    data: { shortATRPeriod: 10, longATRPeriod: 40, alpha: 0.6 },
   },
   {
-    label: 'Commodities - Short: 20, Long: 70, Alpha: 0.7',
-    data: { shortATRPeriod: 20, longATRPeriod: 70, alpha: 0.7 },
+    label: 'Commodities - Short Setup: Short: 7, Long: 30, Alpha: 0.7',
+    data: { shortATRPeriod: 7, longATRPeriod: 30, alpha: 0.7 },
   },
   {
-    label: 'Stocks - Short: 10, Long: 30, Alpha: 0.3',
-    data: { shortATRPeriod: 10, longATRPeriod: 30, alpha: 0.3 },
+    label: 'Stocks - Long Setup: Short: 7, Long: 30, Alpha: 0.4',
+    data: { shortATRPeriod: 7, longATRPeriod: 30, alpha: 0.4 },
   },
   {
-    label: 'Stocks - Short: 15, Long: 60, Alpha: 0.6',
-    data: { shortATRPeriod: 15, longATRPeriod: 60, alpha: 0.6 },
+    label: 'Stocks - Short Setup: Short: 5, Long: 21, Alpha: 0.5',
+    data: { shortATRPeriod: 5, longATRPeriod: 21, alpha: 0.5 },
   },
 ];
+
 
 const ScalingParamsSelector: React.FC<ScalingParamsSelectorProps> = ({ scalingParams, setScalingParams }) => {
   const handlePresetChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
