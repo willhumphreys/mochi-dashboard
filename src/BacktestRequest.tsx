@@ -16,11 +16,20 @@ interface BacktestSuccessResponse {
     groupTag: string;
 }
 
-interface BacktestErrorResponse {
-    message: string;
-}
+import ScalingParamsSelector from './ScalingParamsSelector';
+
+
 
 const BacktestRequest: React.FC = () => {
+
+
+    const [scalingParams, setScalingParams] = useState({
+        shortATRPeriod: '',
+        longATRPeriod: '',
+        alpha: '',
+    });
+
+
     const { isAuthenticated, isLoading } = useAuth();
 
     // Get today's date and format it as YYYY-MM-DD
@@ -51,8 +60,16 @@ const BacktestRequest: React.FC = () => {
     const [params, setParams] = useState<BacktestParams>({
         ticker: 'TSLA',
         from_date: datePresets['5 Years'],
-        to_date: formattedToday
+        to_date: formattedToday,
     });
+
+    const requestBody = {
+        ...params,
+        shortATRPeriod: parseInt(scalingParams.shortATRPeriod, 10),
+        longATRPeriod: parseInt(scalingParams.longATRPeriod, 10),
+        alpha: parseFloat(scalingParams.alpha),
+    };
+
 
     const [result, setResult] = useState<BacktestSuccessResponse | null>(null);
     const [loading, setLoading] = useState<boolean>(false);
@@ -82,6 +99,9 @@ const BacktestRequest: React.FC = () => {
         });
     };
 
+
+
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
@@ -100,7 +120,6 @@ const BacktestRequest: React.FC = () => {
             setError(null);
             setResult(null);
 
-            // Get the authentication token from Cognito
             const authSession = await fetchAuthSession();
             const token = authSession.tokens?.idToken?.toString();
 
@@ -108,7 +127,6 @@ const BacktestRequest: React.FC = () => {
                 throw new Error('No authentication token available');
             }
 
-            // Make the backtest API request
             const response = await fetch(
                 '/api/backtest',
                 {
@@ -117,19 +135,32 @@ const BacktestRequest: React.FC = () => {
                         'Content-Type': 'application/json',
                         'Authorization': `Bearer ${token}`
                     },
-                    body: JSON.stringify(params)
+                    body: JSON.stringify(requestBody) // ensure you use requestBody here
                 }
             );
 
-            const data = await response.json();
+            let data: any = null;
+            const text = await response.text();
 
-            if (!response.ok) {
-                // Parse error response
-                const errorResponse = data as BacktestErrorResponse;
-                throw new Error(errorResponse.message || `API request failed: ${response.status}`);
+            if (text) {
+                try {
+                    data = JSON.parse(text);
+                } catch (jsonError) {
+                    console.error('Failed to parse JSON:', jsonError, text);
+                    throw new Error('Invalid JSON response from server');
+                }
+            } else {
+                // No content in response body
+                if (!response.ok) {
+                    throw new Error(`API request failed with status ${response.status} and empty response`);
+                }
             }
 
-            // Handle success response
+            if (!response.ok) {
+                const errorMessage = data?.message || `API request failed: ${response.status}`;
+                throw new Error(errorMessage);
+            }
+
             setResult(data as BacktestSuccessResponse);
             console.log('Backtest job submitted successfully:', data);
         } catch (err) {
@@ -204,6 +235,12 @@ const BacktestRequest: React.FC = () => {
                         ))}
                     </div>
                 </div>
+
+                <ScalingParamsSelector
+                    scalingParams={scalingParams}
+                    setScalingParams={setScalingParams}
+                />
+
 
                 <div className="form-actions">
                     <button type="submit" disabled={loading || !isAuthenticated}>

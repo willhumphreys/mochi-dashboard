@@ -66,3 +66,35 @@ button:focus-visible {
     background-color: #f9f9f9;
   }
 }
+
+/* index.css */
+
+.scaling-params-selector {
+  border: 1px solid #ccc;
+  padding: 1em;
+  margin-top: 1em;
+  border-radius: 8px;
+  background-color: #f9f9f9;
+}
+
+/* Style labels and inputs within the selector for consistent spacing */
+.scaling-params-selector label {
+  display: block;
+  margin-top: 0.5em;
+  font-weight: 600;
+}
+
+.scaling-params-selector input,
+.scaling-params-selector select {
+  width: 100%;
+  padding: 0.4em;
+  margin-top: 0.2em;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+  box-sizing: border-box;
+}
+
+/* Optional: style for preset dropdowns for better visual harmony */
+.scaling-params-selector select {
+  margin-bottom: 0.5em;
+}
