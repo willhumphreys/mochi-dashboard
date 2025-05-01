@@ -19,9 +19,9 @@ const CreateTickerForm: React.FC<CreateTickerFormProps> = ({onTickerCreated, bro
         setSuccessMessage(null);
 
         // Validate only the base symbol (user input)
-        const symbolPattern = /^[A-Z]{1,5}$/;
+        const symbolPattern = /^[A-Z]{1,6}$/;
         if (!symbolPattern.test(newSymbol)) {
-            setError("Symbol must be 1-5 uppercase letters (e.g., AAPL, MSFT)");
+            setError("Symbol must be 1-6 uppercase letters (e.g., AAPL, MSFT)");
             return;
         }
 
@@ -66,7 +66,7 @@ const CreateTickerForm: React.FC<CreateTickerFormProps> = ({onTickerCreated, bro
                     onChange={(e) => setNewSymbol(e.target.value.toUpperCase())}
                     placeholder="e.g., AAPL"
                     disabled={isCreating}
-                    maxLength={5}
+                    maxLength={6}
                     className="symbol-input"
                 />
                 <button
