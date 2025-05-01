@@ -493,9 +493,9 @@ export const fetchLiveTradesForSymbol = async (symbol: string, broker: string): 
 export const createNewTicker = async (symbol: string, broker: string): Promise<void> => {
     try {
         // Validate the symbol format
-        const symbolPattern = /^[A-Z]{1,5}(-long|-short)?$/;
+        const symbolPattern = /^[A-Z]{1,6}(-long|-short)?$/;
         if (!symbolPattern.test(symbol)) {
-            throw new Error("Symbol must be 1-5 uppercase letters, optionally followed by '-long' or '-short'");
+            throw new Error("Symbol must be 1-6 uppercase letters, optionally followed by '-long' or '-short'");
         }
 
         // Validate broker is provided
