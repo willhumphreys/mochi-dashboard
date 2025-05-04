@@ -59,11 +59,11 @@ const TickerSearch: React.FC<TickerSearchProps> = ({ onTickerSelect, initialValu
                     nextUrl = '';
                 }
 
-                // Limit the number of API calls to avoid rate limits
-                if (tickersMap.size >= 7500) {
-                    console.log(`Reached maximum ticker limit for ${market}`);
-                    break;
-                }
+                // // Limit the number of API calls to avoid rate limits
+                // if (tickersMap.size >= 7500) {
+                //     console.log(`Reached maximum ticker limit for ${market}`);
+                //     break;
+                // }
             }
 
             return tickersMap;
