@@ -188,8 +188,6 @@ export interface TradeData {
     hourofday: number;
     stop: number;
     limit: number;
-    stopped_trade_count: number;
-    limit_trade_count: number;
     tickoffset: number;
     tradeduration: number;
     outoftime: number;
