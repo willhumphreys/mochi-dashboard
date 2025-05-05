@@ -30,6 +30,8 @@ export interface FilteredSetupRow {
     hourofday: number;
     stop: number;
     limit: number;
+    stopped_trade_count: number;
+    limit_trade_count: number;
     tickoffset: number;
     tradeduration: number;
     outoftime: number;
@@ -103,6 +105,8 @@ export interface MergedData{
     hourofday: number;
     stop: number;
     limit: number;
+    stopped_trade_count: number;
+    limit_trade_count: number;
     tickoffset: number;
     tradeduration: number;
     outoftime: number;
@@ -160,6 +164,18 @@ export interface TraderConfigDetails {
     tickoffset: number;
     tradeduration: number;
     outoftime: number;
+    totalprofit?: number;
+    tradecount?: number;
+    wincount?: number;
+    losecount?: number;
+    besttrade?: number;
+    worsttrade?: number;
+    ProfitFactor?: number;
+    averagenetprofit?: number;
+    MaxProfit?: number;
+    MaxDrawdown?: number;
+    stopped_trade_count?: number;
+    limit_trade_count?: number;
 }
 
 /**
@@ -172,6 +188,8 @@ export interface TradeData {
     hourofday: number;
     stop: number;
     limit: number;
+    stopped_trade_count: number;
+    limit_trade_count: number;
     tickoffset: number;
     tradeduration: number;
     outoftime: number;
@@ -186,6 +204,8 @@ export interface TradeSetup {
     hourofday: number;
     stop: number;
     limit: number;
+    stopped_trade_count: number;
+    limit_trade_count: number;
     tickoffset: number;
     tradeduration: number;
     outoftime: number;

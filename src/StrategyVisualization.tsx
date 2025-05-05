@@ -29,7 +29,20 @@ const StrategyVisualization = (
         limit: 0,
         tickoffset: 0,
         tradeduration: 0,
-        outoftime: 0
+        outoftime: 0,
+        // Initialize performance metrics
+        totalprofit: 0,
+        tradecount: 0,
+        wincount: 0,
+        losecount: 0,
+        besttrade: 0,
+        worsttrade: 0,
+        ProfitFactor: 0,
+        averagenetprofit: 0,
+        MaxProfit: 0,
+        MaxDrawdown: 0,
+        stopped_trade_count: 0,
+        limit_trade_count: 0
     });
 
     const copySetupToClipboard = async () => {
@@ -156,7 +169,20 @@ const StrategyVisualization = (
                     limit: selectedStrategy.limit || 0,
                     tickoffset: selectedStrategy.tickoffset || 0,
                     tradeduration: selectedStrategy.tradeduration || 0,
-                    outoftime: selectedStrategy.outoftime || 0
+                    outoftime: selectedStrategy.outoftime || 0,
+                    // Add performance metrics
+                    totalprofit: selectedStrategy.totalprofit,
+                    tradecount: selectedStrategy.tradecount,
+                    wincount: selectedStrategy.wincount,
+                    losecount: selectedStrategy.losecount,
+                    besttrade: selectedStrategy.besttrade,
+                    worsttrade: selectedStrategy.worsttrade,
+                    ProfitFactor: selectedStrategy.ProfitFactor,
+                    averagenetprofit: selectedStrategy.averagenetprofit,
+                    MaxProfit: selectedStrategy.MaxProfit,
+                    MaxDrawdown: selectedStrategy.MaxDrawdown,
+                    stopped_trade_count: selectedStrategy.stopped_trade_count,
+                    limit_trade_count: selectedStrategy.limit_trade_count
                 };
 
                 setTraderConfig(config);
@@ -284,6 +310,12 @@ const StrategyVisualization = (
                             <td>{formatNumber(selectedStrategy.MaxProfit)}</td>
                             <th>Max Drawdown</th>
                             <td>{formatNumber(selectedStrategy.MaxDrawdown)}</td>
+                        </tr>
+                        <tr>
+                            <th>Stopped Count</th>
+                            <td>{selectedStrategy.stopped_trade_count}</td>
+                            <th>Limit Count</th>
+                            <td>{selectedStrategy.limit_trade_count}</td>
                         </tr>
                         </tbody>
                     </table>

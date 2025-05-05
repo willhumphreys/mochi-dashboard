@@ -216,7 +216,9 @@ const StockTreeView = ({onRowSelect, onSymbolSelect}: StockTreeViewProps) => {
                     avg_consecutive_losers: setupRow.avg_consecutive_losers,
                     max_drawdown: setupRow.max_drawdown,
                     profitColumn: setupRow.profitColumn,
-                    hourDay: setupRow.hourDay
+                    hourDay: setupRow.hourDay,
+                    limit_trade_count: setupRow.limit_trade_count,
+                    stopped_trade_count: setupRow.stopped_trade_count,
 
                 } as MergedData;
             });

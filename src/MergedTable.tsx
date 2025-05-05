@@ -153,6 +153,8 @@ const MergedTable = ({onRowSelect, symbol, data, datasource}: MergedTableProps) 
                         profitColumn: setupRow.profitColumn || 0,
                         hourDay: setupRow.hourDay || 0,
                         Symbol: setupRow.Symbol || "",
+                        stopped_trade_count: setupRow.stopped_trade_count || 0,
+                        limit_trade_count: setupRow.limit_trade_count || 0,
                     } as MergedData;
                 });
 
