@@ -32,10 +32,20 @@ export const TradesTable2: React.FC<TradesTable2Props> = ({
     const [symbol, setSymbol] = useState<string>(propSymbol || '');
     const [loading, setLoading] = useState<boolean>(!!tradesUrl);
     const [error, setError] = useState<string | null>(null);
+    const [copied, setCopied] = useState<boolean>(false); // State for copy confirmation
 
     // Define styles for positive and negative profits
     const profitStyle = { color: '#00b300' }; // Green color
     const lossStyle = { color: '#ff0000' };   // Red color
+
+    // Helper function to format numbers with commas and fixed decimal places
+    const formatProfit = (value: number | undefined | null): string => {
+        if (value === undefined || value === null || isNaN(Number(value))) {
+            return "N/A";
+        }
+        return Number(value).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    };
+
 
     useEffect(() => {
         // Update state when prop changes directly
@@ -56,37 +66,22 @@ export const TradesTable2: React.FC<TradesTable2Props> = ({
                 setLoading(true);
                 setError(null);
 
-                // // Extract symbol from URL if not provided as prop
-                // if (!propSymbol) {
-                //     const urlParts = tradesUrl.split('/');
-                //     const fileName = urlParts[urlParts.length - 1];
-                //     const symbolMatch = fileName.match(/^([A-Z0-9]+)_/);
-                //     if (symbolMatch && symbolMatch[1]) {
-                //         setSymbol(symbolMatch[1]);
-                //     }
-                // }
-
                 console.log("Fetching CSV AAA from URL:", tradesUrl);
 
                 let csvData: Record<string, string | number | boolean | undefined>[];
 
-                // Check if tradesUrl is a direct S3 URL
                 if (tradesUrl.includes('amazonaws.com')) {
-                    // Parse the S3 URL to extract bucket name and key
                     let bucketName: string;
                     let objectKey: string;
 
                     try {
-                        // Extract bucket and key from URL
                         const url = new URL(tradesUrl);
                         const hostParts = url.hostname.split('.');
 
                         if (hostParts[0].endsWith('-s3') || hostParts[1] === 's3') {
-                            // URL format: https://bucket-name.s3.region.amazonaws.com/key
                             bucketName = hostParts[0];
-                            objectKey = url.pathname.substring(1); // Remove leading slash
+                            objectKey = url.pathname.substring(1);
                         } else if (hostParts[0] === 's3') {
-                            // URL format: https://s3.region.amazonaws.com/bucket-name/key
                             const pathParts = url.pathname.split('/');
                             bucketName = pathParts[1];
                             objectKey = pathParts.slice(2).join('/');
@@ -102,10 +97,7 @@ export const TradesTable2: React.FC<TradesTable2Props> = ({
                         throw new Error(`Failed to parse S3 URL: ${parseError instanceof Error ? parseError.message : 'Unknown error'}`);
                     }
 
-                    // Use the getSignedS3Url function with the extracted bucket and key
-                    const signedUrl = await getSignedS3Url(bucketName, objectKey, 900); // 15 minutes expiration
-
-                    // Fetch data using the signed URL
+                    const signedUrl = await getSignedS3Url(bucketName, objectKey, 900);
                     const response = await fetch(signedUrl);
 
                     if (!response.ok) {
@@ -113,8 +105,6 @@ export const TradesTable2: React.FC<TradesTable2Props> = ({
                     }
 
                     const csvContent = await response.text();
-
-                    // Parse CSV content with Papa Parse
                     const parseResult = await new Promise<Papa.ParseResult<Record<string, string | number | boolean | undefined>>>((resolve, reject) => {
                         Papa.parse<Record<string, string | number | boolean | undefined>>(csvContent, {
                             header: true,
@@ -124,18 +114,14 @@ export const TradesTable2: React.FC<TradesTable2Props> = ({
                             error: (err: Error) => reject(new Error(`CSV parsing error: ${err.message}`))
                         });
                     });
-
                     csvData = parseResult.data;
                 } else {
-                    // Handle the case where tradesUrl is a key path rather than a full URL
                     const s3Key = tradesUrl;
-
-                    // Use the readCsvFromS3WithSignedUrl function
                     csvData = await readCsvFromS3WithSignedUrl<Record<string, string | number | boolean | undefined>>(
                         LIVE_TRADES_BUCKET_NAME,
                         s3Key,
                         {
-                            expiresIn: 900, // 15 minutes
+                            expiresIn: 900,
                             parseOptions: {
                                 header: true,
                                 dynamicTyping: true,
@@ -145,22 +131,17 @@ export const TradesTable2: React.FC<TradesTable2Props> = ({
                     );
                 }
 
-                // Process parsed data to ensure all required fields with proper types
                 const processedData: TradeResultData[] = csvData.map(row => {
-                    // Helper function to safely parse numeric fields
                     const safeParseFloat = (value: unknown, defaultValue: number = 0): number => {
                         if (typeof value === 'number') return value;
                         if (typeof value === 'string') return parseFloat(value) || defaultValue;
                         return defaultValue;
                     };
-
-                    // Helper to safely get string values
                     const safeString = (value: unknown, defaultValue: string = ''): string => {
                         if (typeof value === 'string') return value;
                         if (value === null || value === undefined) return defaultValue;
                         return String(value);
                     };
-
                     return {
                         PlaceDateTime: safeString(row.PlaceDateTime),
                         FilledPrice: safeParseFloat(row.FilledPrice),
@@ -168,7 +149,7 @@ export const TradesTable2: React.FC<TradesTable2Props> = ({
                         Profit: safeParseFloat(row.Profit),
                         RunningTotalProfit: safeParseFloat(row.RunningTotalProfit),
                         State: safeString(row.State),
-                        PriceCrossed: row.PriceCrossed === 'True'
+                        PriceCrossed: row.PriceCrossed === 'True' || row.PriceCrossed === true
                     };
                 });
 
@@ -185,6 +166,38 @@ export const TradesTable2: React.FC<TradesTable2Props> = ({
         fetchAndParseCsv();
     }, [tradesUrl, propSymbol]);
 
+    const handleCopyToCsv = () => {
+        if (tradeData.length === 0) {
+            return;
+        }
+
+        const headers = ["Date/Time", "Entry Price", "Exit Price", "Profit", "Running Total", "Exit Reason", "Valid"];
+        const dataForCsv = tradeData.map(trade => ({
+            "Date/Time": trade.PlaceDateTime,
+            "Entry Price": trade.FilledPrice.toFixed(2),
+            "Exit Price": trade.ClosingPrice.toFixed(2),
+            "Profit": trade.Profit.toFixed(2),
+            "Running Total": trade.RunningTotalProfit.toFixed(2),
+            "Exit Reason": trade.State,
+            "Valid": trade.PriceCrossed ? 'True' : 'False'
+        }));
+
+        const csvString = Papa.unparse({
+            fields: headers,
+            data: dataForCsv
+        });
+
+        navigator.clipboard.writeText(csvString)
+            .then(() => {
+                setCopied(true);
+                setTimeout(() => setCopied(false), 2000); // Hide message after 2 seconds
+            })
+            .catch(err => {
+                console.error('Failed to copy CSV: ', err);
+                // You could set an error message here if needed
+            });
+    };
+
     if (loading) {
         return <div>Loading trade results...</div>;
     }
@@ -200,6 +213,56 @@ export const TradesTable2: React.FC<TradesTable2Props> = ({
     // Calculate total profit
     const totalProfit = tradeData.reduce((sum, trade) => sum + trade.Profit, 0);
 
+    // Calculate additional stats
+    let loserCount = 0;
+    let loserFollowedByLoserCount = 0;
+    let loserFollowedByTwoLosersCount = 0;
+    let profitSkippingNextAfterLoser = 0;
+    let profitSkippingNextTwoAfterLoser = 0;
+
+
+    if (tradeData.length > 0) {
+        for (let i = 0; i < tradeData.length; i++) {
+            const currentTrade = tradeData[i];
+            const currentProfit = currentTrade.Profit;
+
+            if (currentProfit < 0) {
+                loserCount++;
+                if (i + 1 < tradeData.length && tradeData[i + 1].Profit < 0) {
+                    loserFollowedByLoserCount++;
+                    if (i + 2 < tradeData.length && tradeData[i + 2].Profit < 0) {
+                        loserFollowedByTwoLosersCount++;
+                    }
+                }
+            }
+
+            // Calculate profit if skipping the trade after a loser
+            let includeInNextAfterLoserSkipped = true;
+            if (i > 0 && tradeData[i-1].Profit < 0) {
+                includeInNextAfterLoserSkipped = false;
+            }
+            if (includeInNextAfterLoserSkipped) {
+                profitSkippingNextAfterLoser += currentProfit;
+            }
+
+            // Calculate profit if skipping the next two trades after a loser
+            let includeInNextTwoAfterLoserSkipped = true;
+            if (i > 0 && tradeData[i-1].Profit < 0) { // Previous was a loser, skip current
+                includeInNextTwoAfterLoserSkipped = false;
+            } else if (i > 1 && tradeData[i-2].Profit < 0) { // Two trades ago was a loser, skip current (it's the 2nd trade after that loser)
+                includeInNextTwoAfterLoserSkipped = false;
+            }
+            if (includeInNextTwoAfterLoserSkipped) {
+                profitSkippingNextTwoAfterLoser += currentProfit;
+            }
+        }
+    }
+
+    const oddsNextIsLoser = loserCount > 0 ? (loserFollowedByLoserCount / loserCount) * 100 : 0;
+    const oddsNextTwoAreLosers = loserCount > 0 ? (loserFollowedByTwoLosersCount / loserCount) * 100 : 0;
+    const averageProfitPerTradeValue = tradeData.length > 0 ? totalProfit / tradeData.length : 0;
+
+
     return (
         <div className="trades-table-container">
             <h3>{symbol} Trade Results {datasource ? `(${datasource})` : ''}</h3>
@@ -207,11 +270,34 @@ export const TradesTable2: React.FC<TradesTable2Props> = ({
             <div className="summary">
                 <p>Total trades: {tradeData.length}</p>
                 <p>Total profit: <span style={totalProfit >= 0 ? profitStyle : lossStyle}>
-                    {totalProfit.toFixed(2)}
+                    {formatProfit(totalProfit)}
                 </span></p>
-                <p>Average profit per trade: <span style={(totalProfit / tradeData.length) >= 0 ? profitStyle : lossStyle}>
-                    {(totalProfit / tradeData.length).toFixed(2)}
+                <p>Average profit per trade: <span style={averageProfitPerTradeValue >= 0 ? profitStyle : lossStyle}>
+                    {tradeData.length > 0 ? formatProfit(averageProfitPerTradeValue) : 'N/A'}
                 </span></p>
+                <p>
+                    Odds next trade is loser (given current is loser): {loserCount > 0 ? `${oddsNextIsLoser.toFixed(2)}%` : 'N/A'}
+                </p>
+                <p>
+                    Odds next two trades are losers (given current is loser): {loserCount > 0 ? `${oddsNextTwoAreLosers.toFixed(2)}%` : 'N/A'}
+                </p>
+                <p>
+                    Profit if skipping 1 trade after a loser: <span style={profitSkippingNextAfterLoser >= 0 ? profitStyle : lossStyle}>
+                        {formatProfit(profitSkippingNextAfterLoser)}
+                    </span>
+                </p>
+                <p>
+                    Profit if skipping 2 trades after a loser: <span style={profitSkippingNextTwoAfterLoser >= 0 ? profitStyle : lossStyle}>
+                        {formatProfit(profitSkippingNextTwoAfterLoser)}
+                    </span>
+                </p>
+            </div>
+
+            <div style={{ marginBottom: '10px' }}>
+                <button onClick={handleCopyToCsv} disabled={tradeData.length === 0}>
+                    Copy Table as CSV
+                </button>
+                {copied && <span style={{ marginLeft: '10px', color: 'green' }}>Copied to clipboard!</span>}
             </div>
 
             <table className="trades-table">
@@ -230,13 +316,13 @@ export const TradesTable2: React.FC<TradesTable2Props> = ({
                 {tradeData.map((trade, index) => (
                     <tr key={index}>
                         <td>{trade.PlaceDateTime}</td>
-                        <td>{trade.FilledPrice}</td>
-                        <td>{trade.ClosingPrice}</td>
+                        <td>{trade.FilledPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                        <td>{trade.ClosingPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                         <td style={trade.Profit >= 0 ? profitStyle : lossStyle}>
-                            {trade.Profit}
+                            {formatProfit(trade.Profit)}
                         </td>
                         <td style={trade.RunningTotalProfit >= 0 ? profitStyle : lossStyle}>
-                            {trade.RunningTotalProfit}
+                            {formatProfit(trade.RunningTotalProfit)}
                         </td>
                         <td>{trade.State}</td>
                         <td>{trade.PriceCrossed ? '✅' : '❌'}</td>
