@@ -1,5 +1,5 @@
 // SecFilingsService.ts
-import { readJsonFromS3WithSignedUrl } from "./S3Service";
+import { readJsonFromS3WithSignedUrl, listAllKeys } from "./S3Service";
 import { SecFiling, SecPosition } from "../types";
 
 // Constants
@@ -43,16 +43,22 @@ export const getSecFilingDates = async (personId: string): Promise<string[]> => 
   try {
     // List objects in the person's directory
     const prefix = `${SEC_FILINGS_PREFIX}/${personId}/`;
-    
-    // This would normally use listAllKeys from S3Service, but for now we'll return hardcoded values
-    // In a real implementation, we would list all objects with the prefix and extract the dates
-    
-    // Hardcoded dates for Warren Buffett
-    if (personId === "1067983") {
-      return ["2024-12-31", "2025-03-31"];
-    }
-    
-    return [];
+
+    // Get all keys from S3 with the specified prefix
+    const keys = await listAllKeys(SEC_FILINGS_BUCKET, prefix);
+
+    // Extract dates from the keys
+    // Expected format: sec-filings/13F/{personId}/{personId}_positions_{date}.json
+    const dateRegex = new RegExp(`${personId}_positions_(\\d{4}-\\d{2}-\\d{2})\\.json$`);
+
+    const dates = keys
+      .map(key => {
+        const match = key.match(dateRegex);
+        return match ? match[1] : null;
+      })
+      .filter((date): date is string => date !== null);
+
+    return dates;
   } catch (error) {
     console.error(`Error fetching SEC filing dates for person ${personId}:`, error);
     throw error;
@@ -68,17 +74,17 @@ export const getSecFilingDates = async (personId: string): Promise<string[]> => 
 export const getSecFiling = async (personId: string, date: string): Promise<SecFiling> => {
   try {
     const key = `${SEC_FILINGS_PREFIX}/${personId}/${personId}_positions_${date}.json`;
-    
+
     // Fetch the filing from S3
     const positions = await readJsonFromS3WithSignedUrl<SecPosition[]>(
       SEC_FILINGS_BUCKET,
       key
     );
-    
+
     // Find the person's name
     const person = SEC_FILING_PEOPLE.find(p => p.id === personId);
     const personName = person ? person.name : personId;
-    
+
     return {
       personId,
       personName,
@@ -100,34 +106,34 @@ export const getAllSecFilingsWithChanges = async (personId: string): Promise<Sec
   try {
     // Get all filing dates for the person
     const dates = await getSecFilingDates(personId);
-    
+
     // Sort dates in ascending order
     const sortedDates = [...dates].sort();
-    
+
     // Fetch all filings
     const filings: SecFiling[] = await Promise.all(
       sortedDates.map(date => getSecFiling(personId, date))
     );
-    
+
     // Calculate changes between filings
     for (let i = 1; i < filings.length; i++) {
       const currentFiling = filings[i];
       const previousFiling = filings[i - 1];
-      
+
       // Create a map of previous positions by ticker for easy lookup
       const previousPositions = new Map<string, SecPosition>();
       previousFiling.positions.forEach(position => {
         previousPositions.set(position.Ticker, position);
       });
-      
+
       // Calculate changes for each position in the current filing
       currentFiling.positions.forEach(position => {
         const previousPosition = previousPositions.get(position.Ticker);
-        
+
         if (previousPosition) {
           // Calculate change in shares
           position.Change = position.TotalShares - previousPosition.TotalShares;
-          
+
           // Calculate percent change
           if (previousPosition.TotalShares > 0) {
             position.PercentChange = (position.Change / previousPosition.TotalShares) * 100;
@@ -143,14 +149,14 @@ export const getAllSecFilingsWithChanges = async (personId: string): Promise<Sec
           position.PercentChange = 100;
         }
       });
-      
+
       // Add positions that were in the previous filing but not in the current one
       // (these are positions that were completely sold)
       previousFiling.positions.forEach(prevPosition => {
         const exists = currentFiling.positions.some(
           currPosition => currPosition.Ticker === prevPosition.Ticker
         );
-        
+
         if (!exists) {
           currentFiling.positions.push({
             ...prevPosition,
@@ -162,7 +168,7 @@ export const getAllSecFilingsWithChanges = async (personId: string): Promise<Sec
         }
       });
     }
-    
+
     return filings;
   } catch (error) {
     console.error(`Error fetching all SEC filings with changes for person ${personId}:`, error);

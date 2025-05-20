@@ -85,6 +85,12 @@ export const listAllKeys = async (bucketName: string, prefix: string = ''): Prom
     try {
         console.log(`Listing all keys in bucket: ${bucketName}${prefix ? ` with prefix: ${prefix}` : ''}`);
 
+        // For the specific bucket that has CORS issues, use the proxy
+        if (bucketName === 'mochi-prod-portfolio-tracking') {
+            return await listAllKeysViaProxy(bucketName, prefix);
+        }
+
+        // For other buckets, use the original AWS SDK approach
         let allKeys: string[] = [];
         let continuationToken: string | undefined = undefined;
 
@@ -113,6 +119,52 @@ export const listAllKeys = async (bucketName: string, prefix: string = ''): Prom
     } catch (error) {
         console.error(`Error listing keys in bucket ${bucketName}:`, error);
         throw new Error(`Failed to list keys: ${error instanceof Error ? error.message : String(error)}`);
+    }
+};
+
+/**
+ * Lists all objects (keys) in the specified S3 bucket using the AWS SDK directly
+ * This function was originally using a proxy but now uses the AWS SDK directly to avoid 403 errors
+ * @param bucketName - Name of the S3 bucket
+ * @param prefix - Optional prefix to filter objects (defaults to empty string)
+ * @returns Promise that resolves to an array of object keys
+ */
+const listAllKeysViaProxy = async (bucketName: string, prefix: string = ''): Promise<string[]> => {
+    try {
+        console.log(`Listing all keys directly for bucket: ${bucketName}${prefix ? ` with prefix: ${prefix}` : ''}`);
+
+        // Use the AWS SDK directly with credentials instead of the proxy
+        // This avoids the 403 Forbidden error we were getting with the proxy
+        let allKeys: string[] = [];
+        let continuationToken: string | undefined = undefined;
+
+        // S3 returns results in pages, so we need to loop until we get all keys
+        do {
+            const command: ListObjectsV2Command = new ListObjectsV2Command({
+                Bucket: bucketName,
+                Prefix: prefix,
+                ContinuationToken: continuationToken
+            });
+
+            const response = await s3Client.send(command);
+
+            // Add the keys from this page to our result array
+            if (response.Contents) {
+                const keys = response.Contents.map(obj => obj.Key).filter((key): key is string => key !== undefined);
+                allKeys = [...allKeys, ...keys];
+            }
+
+            // Check if there are more results to fetch
+            continuationToken = response.NextContinuationToken;
+
+        } while (continuationToken);
+
+        console.log(`Retrieved ${allKeys.length} keys from bucket ${bucketName} using AWS SDK directly`);
+        return allKeys;
+
+    } catch (error) {
+        console.error(`Error listing keys directly for bucket ${bucketName}:`, error);
+        throw new Error(`Failed to fetch keys directly: ${error instanceof Error ? error.message : String(error)}`);
     }
 };
 
@@ -671,10 +723,53 @@ export const readJsonFromS3WithSignedUrl = async <T>(
     } = {}
 ): Promise<T> => {
     try {
+        // For the specific bucket that has CORS issues, use the proxy
+        if (bucketName === 'mochi-prod-portfolio-tracking') {
+            return await readJsonViaProxy<T>(bucketName, key);
+        }
+
         const response = await getS3ObjectWithSignedUrl(bucketName, key, options);
         return await response.json() as T;
     } catch (error) {
         console.error(`Error reading JSON from ${bucketName}/${key}:`, error);
+        throw new Error(`Failed to read JSON: ${error instanceof Error ? error.message : String(error)}`);
+    }
+};
+
+/**
+ * Read JSON data from S3 using the AWS SDK directly
+ * This function was originally using a proxy but now uses the AWS SDK directly to avoid 403 errors
+ * @param bucketName - Name of the S3 bucket
+ * @param key - Object key (file path) in the bucket
+ * @returns Promise that resolves to the parsed JSON data
+ */
+const readJsonViaProxy = async <T>(
+    bucketName: string,
+    key: string
+): Promise<T> => {
+    try {
+        console.log(`Reading JSON directly from bucket: ${bucketName}, key: ${key}`);
+
+        // Use the AWS SDK directly with credentials instead of the proxy
+        // This avoids the 403 Forbidden error we were getting with the proxy
+        const command = new GetObjectCommand({
+            Bucket: bucketName,
+            Key: key
+        });
+
+        const response = await s3Client.send(command);
+
+        if (!response.Body) {
+            throw new Error('No content in S3 response');
+        }
+
+        // Convert the response body to text
+        const jsonContent = await response.Body.transformToString();
+
+        // Parse the JSON
+        return JSON.parse(jsonContent) as T;
+    } catch (error) {
+        console.error(`Error reading JSON directly from ${bucketName}/${key}:`, error);
         throw new Error(`Failed to read JSON: ${error instanceof Error ? error.message : String(error)}`);
     }
 };
@@ -811,4 +906,3 @@ export const updateCsvInS3 = async (
 };
 
 export {s3Client, LIVE_TRADES_BUCKET_NAME};
-

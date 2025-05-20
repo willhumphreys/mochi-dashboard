@@ -11,6 +11,12 @@ export default defineConfig({
         target: 'https://6a3jgki3ul.execute-api.eu-central-1.amazonaws.com',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api/, '/prod')
+      },
+      // Proxy for S3 bucket to avoid CORS issues
+      '/s3-proxy/mochi-prod-portfolio-tracking': {
+        target: 'https://mochi-prod-portfolio-tracking.s3.eu-central-1.amazonaws.com',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/s3-proxy\/mochi-prod-portfolio-tracking/, '')
       }
     }
   }
