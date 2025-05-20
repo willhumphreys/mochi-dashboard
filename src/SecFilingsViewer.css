@@ -1,0 +1,186 @@
+/* SecFilingsViewer.css */
+
+.sec-filings-viewer {
+  width: 100%;
+  padding: 20px;
+  background-color: #f5f5f5;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.sec-filings-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.sec-filings-header h2 {
+  margin: 0;
+  color: #333;
+}
+
+.sec-filings-controls {
+  display: flex;
+  gap: 20px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.person-selector {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.person-selector label {
+  font-weight: bold;
+}
+
+.person-selector select {
+  padding: 8px 12px;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+  background-color: white;
+  min-width: 200px;
+}
+
+.tab-selector {
+  display: flex;
+  gap: 10px;
+}
+
+.tab-button {
+  padding: 8px 16px;
+  border: 1px solid #ccc;
+  background-color: white;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.tab-button:hover:not(:disabled) {
+  background-color: #f0f0f0;
+}
+
+.tab-button.active {
+  background-color: #007bff;
+  color: white;
+  border-color: #007bff;
+}
+
+.tab-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.error-message {
+  color: #d9534f;
+  padding: 10px;
+  margin: 10px 0;
+  background-color: #f8d7da;
+  border-radius: 4px;
+  border: 1px solid #f5c6cb;
+}
+
+.loading-indicator {
+  text-align: center;
+  padding: 20px;
+  color: #666;
+}
+
+.sec-filings-content {
+  background-color: white;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.holdings-tab h3,
+.changes-tab h3 {
+  margin-top: 0;
+  margin-bottom: 20px;
+  color: #333;
+}
+
+.sec-filings-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 20px;
+}
+
+.sec-filings-table th,
+.sec-filings-table td {
+  padding: 12px 15px;
+  text-align: left;
+  border-bottom: 1px solid #ddd;
+}
+
+.sec-filings-table th {
+  background-color: #f8f9fa;
+  font-weight: bold;
+  color: #495057;
+}
+
+.sec-filings-table tr:hover {
+  background-color: #f5f5f5;
+}
+
+.sec-filings-table .number-cell {
+  text-align: right;
+  font-family: monospace;
+}
+
+/* Highlight rows with changes */
+.positive-change {
+  background-color: rgba(40, 167, 69, 0.1);
+}
+
+.negative-change {
+  background-color: rgba(220, 53, 69, 0.1);
+}
+
+.positive-change:hover {
+  background-color: rgba(40, 167, 69, 0.2);
+}
+
+.negative-change:hover {
+  background-color: rgba(220, 53, 69, 0.2);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .sec-filings-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 15px;
+  }
+  
+  .sec-filings-controls {
+    flex-direction: column;
+    align-items: flex-start;
+    width: 100%;
+  }
+  
+  .person-selector {
+    width: 100%;
+  }
+  
+  .person-selector select {
+    width: 100%;
+  }
+  
+  .tab-selector {
+    width: 100%;
+  }
+  
+  .tab-button {
+    flex: 1;
+  }
+  
+  .sec-filings-table {
+    display: block;
+    overflow-x: auto;
+  }
+}

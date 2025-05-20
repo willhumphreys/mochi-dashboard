@@ -208,3 +208,27 @@ export interface TradeSetup {
     tradeduration: number;
     outoftime: number;
 }
+
+/**
+ * Interface for SEC filing position data
+ */
+export interface SecPosition {
+    Cusip: string;
+    Issuer: string;
+    Ticker: string;
+    Class: string;
+    TotalShares: number;
+    TotalValue: number;
+    Change?: number; // Change in shares from previous filing (calculated)
+    PercentChange?: number; // Percentage change from previous filing (calculated)
+}
+
+/**
+ * Interface for SEC filing metadata
+ */
+export interface SecFiling {
+    personId: string; // ID of the person/entity (e.g., "1067983" for Warren Buffet)
+    personName: string; // Name of the person/entity (e.g., "Warren Buffet")
+    filingDate: string; // Date of the filing (e.g., "2024-12-31")
+    positions: SecPosition[]; // Array of positions in the filing
+}

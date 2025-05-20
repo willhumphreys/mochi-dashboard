@@ -9,7 +9,8 @@ import DashboardTitle from "./DashboardTitle";
 import MergedTable from "./MergedTable";
 import BacktestRequest from './BacktestRequest';
 import {SetupsViewer} from './SetupsViewer.tsx';
-import BrokerManager from './BrokerManager.tsx'; // Import the new component
+import BrokerManager from './BrokerManager.tsx';
+import SecFilingsViewer from './SecFilingsViewer'; // Import the SEC filings viewer
 import { MergedData } from "./types";
 import Login from './Login';
 
@@ -20,7 +21,8 @@ function App() {
     const [selectedSymbol, setSelectedSymbol] = useState<string | null>(null);
     const [showBacktestForm, setShowBacktestForm] = useState<boolean>(false);
     const [showSetups, setShowSetups] = useState<boolean>(false);
-    const [showBrokerManager, setShowBrokerManager] = useState<boolean>(false); // New state for broker manager
+    const [showBrokerManager, setShowBrokerManager] = useState<boolean>(false); // State for broker manager
+    const [showSecFilings, setShowSecFilings] = useState<boolean>(false); // State for SEC filings viewer
 
     const handleStrategySelect = useCallback((row: MergedData) => {
         setSelectedStrategy(row);
@@ -80,6 +82,12 @@ function App() {
                         >
                             {showBrokerManager ? 'Hide Broker Manager' : 'Manage Brokers'}
                         </button>
+                        <button
+                            onClick={() => setShowSecFilings(!showSecFilings)}
+                            className="toggle-button"
+                        >
+                            {showSecFilings ? 'Hide SEC Filings' : 'Show SEC Filings'}
+                        </button>
                     </div>
                 </div>
 
@@ -89,6 +97,7 @@ function App() {
                     onSymbolChange={handleSetupsSymbolChange}
                 />}
                 {showBrokerManager && <BrokerManager />}
+                {showSecFilings && <SecFilingsViewer />}
             </div>
 
             <div className="app-content">
