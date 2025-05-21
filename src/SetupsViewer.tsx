@@ -47,7 +47,7 @@ export const SetupsViewer: React.FC<SetupsViewerProps> = ({
     };
 
     loadBrokers();
-  }, []);
+  }, [broker]);
 
   // Load available symbols when broker changes
   useEffect(() => {
@@ -77,7 +77,7 @@ export const SetupsViewer: React.FC<SetupsViewerProps> = ({
     };
 
     loadSymbols();
-  }, [broker, symbolRefreshCounter]);
+  }, [broker, symbolRefreshCounter, symbol]);
 
   const handleTradeAdded = (newTrade: TradeData) => {
     setTradeData(prevTrades => [...prevTrades, newTrade]);

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { fetchAuthSession } from 'aws-amplify/auth';
-import { useAuth } from './AuthContext';
+import { useAuth } from './hooks/useAuth';
 import TickerSearch from './TickerSearch'; // Import the new component
 
 interface BacktestParams {
@@ -139,7 +139,7 @@ const BacktestRequest: React.FC = () => {
                 }
             );
 
-            let data: any = null;
+            let data: BacktestSuccessResponse | null = null;
             const text = await response.text();
 
             if (text) {

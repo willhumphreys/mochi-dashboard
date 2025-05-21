@@ -1,6 +1,6 @@
 // src/Login.tsx
 import React from 'react';
-import { useAuth } from './AuthContext';
+import { useAuth } from './hooks/useAuth';
 
 const Login: React.FC = () => {
     const { signIn } = useAuth();

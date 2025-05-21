@@ -1,5 +1,5 @@
 // App.tsx (modified version)
-import { useAuth } from './AuthContext';
+import { useAuth } from './hooks/useAuth';
 import { useState, useCallback } from 'react';
 import './App.css';
 import StockTreeView from "./StockTreeView";

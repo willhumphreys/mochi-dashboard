@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { MergedData, TraderConfigDetails } from "./types";
 import { getS3ImageUrl, getDirectS3Url } from "./services/S3Service";
 import { TradesTable2 } from "./TradesTable2";
@@ -19,6 +19,32 @@ const StrategyVisualization = (
     const [usedDirectUrl, setUsedDirectUrl] = useState<boolean>(false);
     const [copySuccess, setCopySuccess] = useState(false);
 
+    // Define key construction functions using useCallback
+    const constructGraphS3Key = useCallback((strategy: MergedData): string | null => {
+        if (!strategy || !strategy.Symbol) return null;
+
+        // Use the helper function to get the folder name with datasource
+        const symbolFolder = getSymbolFolderName(strategy.Symbol, datasource);
+
+        return `${symbolFolder}/graphs/${symbolFolder}_${strategy.Scenario}_${strategy.TraderID}.png`;
+    }, [datasource]);
+
+    const constructTradeS3Key = useCallback((strategy: MergedData): string | null => {
+        if (!strategy || !strategy.Symbol) return null;
+
+        // Use the helper function to get the folder name with datasource
+        const symbolFolder = getSymbolFolderName(strategy.Symbol, datasource);
+
+        // Use the helper function to get the file prefix with datasource
+        const filePrefix = getSymbolFilePrefix(strategy.Symbol, datasource);
+
+        // Use the pre-existing scenario string instead of constructing it
+        // Assuming strategy.scenarioString contains the full parameter string
+        const scenarioString = strategy.Scenario;
+
+        // Return the constructed key with the trader ID
+        return `${symbolFolder}/trades/${filePrefix}_${scenarioString}_${strategy.TraderID}.csv`;
+    }, [datasource]);
 
     // Add state for trader configuration
     const [, setTraderConfig] = useState<TraderConfigDetails>({
@@ -192,35 +218,8 @@ const StrategyVisualization = (
         };
 
         fetchTraderConfig();
-    }, [selectedStrategy]);
+    }, [selectedStrategy, constructGraphS3Key, constructTradeS3Key]);
 
-    // Update your key construction functions
-    const constructGraphS3Key = (strategy: MergedData): string | null => {
-        if (!strategy || !strategy.Symbol) return null;
-
-        // Use the helper function to get the folder name with datasource
-        const symbolFolder = getSymbolFolderName(strategy.Symbol, datasource);
-
-        return `${symbolFolder}/graphs/${symbolFolder}_${strategy.Scenario}_${strategy.TraderID}.png`;
-    };
-
-
-    const constructTradeS3Key = (strategy: MergedData): string | null => {
-        if (!strategy || !strategy.Symbol) return null;
-
-        // Use the helper function to get the folder name with datasource
-        const symbolFolder = getSymbolFolderName(strategy.Symbol, datasource);
-
-        // Use the helper function to get the file prefix with datasource
-        const filePrefix = getSymbolFilePrefix(strategy.Symbol, datasource);
-
-        // Use the pre-existing scenario string instead of constructing it
-        // Assuming strategy.scenarioString contains the full parameter string
-        const scenarioString = strategy.Scenario;
-
-        // Return the constructed key with the trader ID
-        return `${symbolFolder}/trades/${filePrefix}_${scenarioString}_${strategy.TraderID}.csv`;
-    };
 
 // Keep your existing URL construction pattern but just add the datasource properly
     if (!selectedStrategy) {

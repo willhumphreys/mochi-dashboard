@@ -168,7 +168,7 @@ const MergedTable = ({onRowSelect, symbol, data, datasource}: MergedTableProps) 
         };
 
         loadAndMergeData();
-    }, [symbol, data]); // Re-run when symbol or data changes
+    }, [symbol, data, datasource]); // Re-run when symbol, data, or datasource changes
 
     if (isLoading) {
         return <div className="loading">Loading data for {symbol}...</div>;

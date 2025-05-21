@@ -2,7 +2,7 @@
 import { Amplify } from 'aws-amplify';
 import { signOut, fetchAuthSession, getCurrentUser, signInWithRedirect } from 'aws-amplify/auth';
 import amplifyConfig from './config/amplify-config';
-import { createContext, useContext, useState, useEffect, ReactNode, useRef } from 'react';
+import { createContext, useState, useEffect, ReactNode, useRef } from 'react';
 
 // Initialize Amplify with your configuration
 Amplify.configure(amplifyConfig);
@@ -30,13 +30,6 @@ const AuthContext = createContext<AuthContextType>({
   signOut: async () => {} // Default async function
 });
 
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
-};
 
 interface AuthProviderProps {
   children: ReactNode;
