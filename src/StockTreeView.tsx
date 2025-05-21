@@ -3,7 +3,11 @@ import {useEffect, useState} from "react";
 import Papa from "papaparse";
 import {AggregatedSummaryRow, FilteredSetupRow, MergedData} from "./types";
 import {fetchStockSymbols, getDirectS3Url, getS3ImageUrl} from "./services/S3Service";
-import setupGroupService, { SetupGroupType, getSetupGroupDescriptions } from "./services/SetupGroupService";
+import setupGroupService, { 
+  SetupGroupType, 
+  getSetupGroupDescriptions, 
+  HierarchicalSetupGroup 
+} from "./services/SetupGroupService";
 
 interface StockTreeViewProps {
     onRowSelect: (row: MergedData) => void;
@@ -15,6 +19,7 @@ interface StockData {
     isExpanded: boolean;
     data: MergedData[];
     groupedData: Partial<Record<SetupGroupType, MergedData[]>>;
+    hierarchicalGroups: Partial<Record<SetupGroupType, HierarchicalSetupGroup>>;
     expandedGroups: SetupGroupType[];
     isLoading: boolean;
     error: string | null;
@@ -61,6 +66,7 @@ const StockTreeView = ({onRowSelect, onSymbolSelect}: StockTreeViewProps) => {
                         isExpanded: false, 
                         data: [], 
                         groupedData: {} as Partial<Record<SetupGroupType, MergedData[]>>,
+                        hierarchicalGroups: {} as Partial<Record<SetupGroupType, HierarchicalSetupGroup>>,
                         expandedGroups: [],
                         isLoading: false, 
                         error: null
@@ -266,13 +272,17 @@ const StockTreeView = ({onRowSelect, onSymbolSelect}: StockTreeViewProps) => {
             // Group the setups by different criteria
             const groupedSetups = setupGroupService.groupSetups(mergedData);
 
+            // Organize the setup groups hierarchically
+            const hierarchicalGroups = setupGroupService.organizeSetupGroupsHierarchically(groupedSetups);
+
             // Update state with the loaded data and grouped setups
             setStocksData(prevData => ({
                 ...prevData, [symbol]: {
                     ...prevData[symbol], 
                     isLoading: false, 
                     data: mergedData,
-                    groupedData: groupedSetups
+                    groupedData: groupedSetups,
+                    hierarchicalGroups: hierarchicalGroups
                 }
             }));
 
@@ -284,6 +294,7 @@ const StockTreeView = ({onRowSelect, onSymbolSelect}: StockTreeViewProps) => {
                     isLoading: false, 
                     error: error instanceof Error ? error.message : String(error),
                     groupedData: {} as Partial<Record<SetupGroupType, MergedData[]>>,
+                    hierarchicalGroups: {} as Partial<Record<SetupGroupType, HierarchicalSetupGroup>>,
                     expandedGroups: []
                 }
             }));
@@ -332,47 +343,72 @@ const StockTreeView = ({onRowSelect, onSymbolSelect}: StockTreeViewProps) => {
                                     <div className="status-message">No data available for {symbol}</div>
                                 ) : (
                                     <div className="groups-container">
-                                        {/* Display setup groups */}
-                                        {Object.entries(stocksData[symbol].groupedData).map(([groupTypeStr, setups]) => {
-                                            // Skip empty groups
-                                            if (setups.length === 0) return null;
+                                        {/* Display hierarchical setup groups */}
+                                        {Object.entries(stocksData[symbol].hierarchicalGroups)
+                                            .filter(([, group]) => group.children && group.children.length > 0)
+                                            .map(([, group]) => {
 
-                                            const groupType = groupTypeStr as SetupGroupType;
-                                            const isGroupExpanded = stocksData[symbol].expandedGroups.includes(groupType);
+                                                // Recursive component to render a setup group and its children
+                                                const renderSetupGroup = (group: HierarchicalSetupGroup, level: number = 0) => {
+                                                    const groupType = group.type;
+                                                    const isGroupExpanded = stocksData[symbol].expandedGroups.includes(groupType);
+                                                    const hasChildren = group.children && group.children.length > 0;
+                                                    const hasSetups = group.setups && group.setups.length > 0;
 
-                                            return (
-                                                <div key={groupTypeStr} className="setup-group">
-                                                    <div 
-                                                        className="group-header"
-                                                        onClick={() => toggleGroup(symbol, groupType)}
-                                                    >
-                                                        <span className="toggle-icon">
-                                                            {isGroupExpanded ? '▼' : '▶'}
-                                                        </span>
-                                                        <span 
-                                                            className="group-name"
-                                                            title={groupDescriptions[groupType] || ""}
+                                                    return (
+                                                        <div 
+                                                            key={groupType} 
+                                                            className="setup-group"
+                                                            style={{ marginLeft: `${level * 20}px` }}
                                                         >
-                                                            {groupType} ({setups.length})
-                                                        </span>
-                                                    </div>
-
-                                                    {isGroupExpanded && (
-                                                        <div className="group-setups">
-                                                            {setups.map((setup, index) => (
-                                                                <div
-                                                                    key={index}
-                                                                    onClick={() => onRowSelect(setup)}
-                                                                    className="scenario-item"
+                                                            <div 
+                                                                className="group-header"
+                                                                onClick={() => toggleGroup(symbol, groupType)}
+                                                            >
+                                                                <span className="toggle-icon">
+                                                                    {isGroupExpanded ? '▼' : '▶'}
+                                                                </span>
+                                                                <span 
+                                                                    className="group-name"
+                                                                    title={groupDescriptions[groupType] || ""}
                                                                 >
-                                                                    {setup.Scenario} (Rank: {setup.Rank})
+                                                                    {group.name} ({hasSetups ? group.setups.length : 0})
+                                                                </span>
+                                                            </div>
+
+                                                            {isGroupExpanded && (
+                                                                <div className="group-content">
+                                                                    {/* Render setups */}
+                                                                    {hasSetups && (
+                                                                        <div className="group-setups">
+                                                                            {group.setups.map((setup, index) => (
+                                                                                <div
+                                                                                    key={index}
+                                                                                    onClick={() => onRowSelect(setup)}
+                                                                                    className="scenario-item"
+                                                                                >
+                                                                                    {setup.Scenario} (Rank: {setup.Rank})
+                                                                                </div>
+                                                                            ))}
+                                                                        </div>
+                                                                    )}
+
+                                                                    {/* Render child groups */}
+                                                                    {hasChildren && (
+                                                                        <div className="child-groups">
+                                                                            {group.children.map(childGroup => 
+                                                                                renderSetupGroup(childGroup, level + 1)
+                                                                            )}
+                                                                        </div>
+                                                                    )}
                                                                 </div>
-                                                            ))}
+                                                            )}
                                                         </div>
-                                                    )}
-                                                </div>
-                                            );
-                                        })}
+                                                    );
+                                                };
+
+                                                return renderSetupGroup(group);
+                                            })}
                                     </div>
                                 )}
                             </div>
