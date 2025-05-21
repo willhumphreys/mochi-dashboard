@@ -14,7 +14,7 @@ interface StockData {
     symbol: string;
     isExpanded: boolean;
     data: MergedData[];
-    groupedData: Record<SetupGroupType, MergedData[]>;
+    groupedData: Partial<Record<SetupGroupType, MergedData[]>>;
     expandedGroups: SetupGroupType[];
     isLoading: boolean;
     error: string | null;
@@ -60,7 +60,7 @@ const StockTreeView = ({onRowSelect, onSymbolSelect}: StockTreeViewProps) => {
                         symbol, 
                         isExpanded: false, 
                         data: [], 
-                        groupedData: {} as Record<SetupGroupType, MergedData[]>,
+                        groupedData: {} as Partial<Record<SetupGroupType, MergedData[]>>,
                         expandedGroups: [],
                         isLoading: false, 
                         error: null
@@ -283,7 +283,7 @@ const StockTreeView = ({onRowSelect, onSymbolSelect}: StockTreeViewProps) => {
                     ...prevData[symbol], 
                     isLoading: false, 
                     error: error instanceof Error ? error.message : String(error),
-                    groupedData: {} as Record<SetupGroupType, MergedData[]>,
+                    groupedData: {} as Partial<Record<SetupGroupType, MergedData[]>>,
                     expandedGroups: []
                 }
             }));

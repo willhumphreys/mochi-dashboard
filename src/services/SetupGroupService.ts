@@ -108,18 +108,18 @@ const isBuyLimit = (setup: MergedData): boolean => {
 /**
  * Groups setups by entry strategy
  */
-const groupByEntryStrategy = (setups: MergedData[]): Record<SetupGroupType, MergedData[]> => {
-  const groups: Record<SetupGroupType, MergedData[]> = {
+const groupByEntryStrategy = (setups: MergedData[]): Partial<Record<SetupGroupType, MergedData[]>> => {
+  const groups: Partial<Record<SetupGroupType, MergedData[]>> = {
     [SetupGroupType.BUY_STOP]: [],
     [SetupGroupType.BUY_LIMIT]: [],
-  } as Record<SetupGroupType, MergedData[]>;
+  };
 
   setups.forEach(setup => {
     if (isBuyStop(setup)) {
-      groups[SetupGroupType.BUY_STOP].push(setup);
+      groups[SetupGroupType.BUY_STOP]!.push(setup);
     }
     if (isBuyLimit(setup)) {
-      groups[SetupGroupType.BUY_LIMIT].push(setup);
+      groups[SetupGroupType.BUY_LIMIT]!.push(setup);
     }
   });
 
@@ -132,20 +132,20 @@ const groupByEntryStrategy = (setups: MergedData[]): Record<SetupGroupType, Merg
 const groupByRiskReward = (
   setups: MergedData[], 
   config: GroupingConfig = defaultConfig
-): Record<SetupGroupType, MergedData[]> => {
-  const groups: Record<SetupGroupType, MergedData[]> = {
+): Partial<Record<SetupGroupType, MergedData[]>> => {
+  const groups: Partial<Record<SetupGroupType, MergedData[]>> = {
     [SetupGroupType.LOW_RISK_REWARD]: [],
     [SetupGroupType.BALANCED_RISK_REWARD]: [],
     [SetupGroupType.HIGH_RISK_REWARD]: [],
-  } as Record<SetupGroupType, MergedData[]>;
+  };
 
   setups.forEach(setup => {
     if (setup.reward_risk_ratio < config.lowRiskRewardThreshold) {
-      groups[SetupGroupType.LOW_RISK_REWARD].push(setup);
+      groups[SetupGroupType.LOW_RISK_REWARD]!.push(setup);
     } else if (setup.reward_risk_ratio >= config.highRiskRewardThreshold) {
-      groups[SetupGroupType.HIGH_RISK_REWARD].push(setup);
+      groups[SetupGroupType.HIGH_RISK_REWARD]!.push(setup);
     } else {
-      groups[SetupGroupType.BALANCED_RISK_REWARD].push(setup);
+      groups[SetupGroupType.BALANCED_RISK_REWARD]!.push(setup);
     }
   });
 
@@ -158,21 +158,21 @@ const groupByRiskReward = (
 const groupByStopDistance = (
   setups: MergedData[], 
   config: GroupingConfig = defaultConfig
-): Record<SetupGroupType, MergedData[]> => {
-  const groups: Record<SetupGroupType, MergedData[]> = {
+): Partial<Record<SetupGroupType, MergedData[]>> => {
+  const groups: Partial<Record<SetupGroupType, MergedData[]>> = {
     [SetupGroupType.TIGHT_STOP]: [],
     [SetupGroupType.MEDIUM_STOP]: [],
     [SetupGroupType.WIDE_STOP]: [],
-  } as Record<SetupGroupType, MergedData[]>;
+  };
 
   setups.forEach(setup => {
     const stopDistance = Math.abs(setup.stop);
     if (stopDistance < config.tightStopThreshold) {
-      groups[SetupGroupType.TIGHT_STOP].push(setup);
+      groups[SetupGroupType.TIGHT_STOP]!.push(setup);
     } else if (stopDistance >= config.wideStopThreshold) {
-      groups[SetupGroupType.WIDE_STOP].push(setup);
+      groups[SetupGroupType.WIDE_STOP]!.push(setup);
     } else {
-      groups[SetupGroupType.MEDIUM_STOP].push(setup);
+      groups[SetupGroupType.MEDIUM_STOP]!.push(setup);
     }
   });
 
@@ -185,21 +185,21 @@ const groupByStopDistance = (
 const groupByLimitDistance = (
   setups: MergedData[], 
   config: GroupingConfig = defaultConfig
-): Record<SetupGroupType, MergedData[]> => {
-  const groups: Record<SetupGroupType, MergedData[]> = {
+): Partial<Record<SetupGroupType, MergedData[]>> => {
+  const groups: Partial<Record<SetupGroupType, MergedData[]>> = {
     [SetupGroupType.SMALL_TARGET]: [],
     [SetupGroupType.MEDIUM_TARGET]: [],
     [SetupGroupType.LARGE_TARGET]: [],
-  } as Record<SetupGroupType, MergedData[]>;
+  };
 
   setups.forEach(setup => {
     const limitDistance = Math.abs(setup.limit);
     if (limitDistance < config.smallTargetThreshold) {
-      groups[SetupGroupType.SMALL_TARGET].push(setup);
+      groups[SetupGroupType.SMALL_TARGET]!.push(setup);
     } else if (limitDistance >= config.largeTargetThreshold) {
-      groups[SetupGroupType.LARGE_TARGET].push(setup);
+      groups[SetupGroupType.LARGE_TARGET]!.push(setup);
     } else {
-      groups[SetupGroupType.MEDIUM_TARGET].push(setup);
+      groups[SetupGroupType.MEDIUM_TARGET]!.push(setup);
     }
   });
 
@@ -212,20 +212,20 @@ const groupByLimitDistance = (
 const groupByTradeDuration = (
   setups: MergedData[], 
   config: GroupingConfig = defaultConfig
-): Record<SetupGroupType, MergedData[]> => {
-  const groups: Record<SetupGroupType, MergedData[]> = {
+): Partial<Record<SetupGroupType, MergedData[]>> => {
+  const groups: Partial<Record<SetupGroupType, MergedData[]>> = {
     [SetupGroupType.SHORT_DURATION]: [],
     [SetupGroupType.MEDIUM_DURATION]: [],
     [SetupGroupType.LONG_DURATION]: [],
-  } as Record<SetupGroupType, MergedData[]>;
+  };
 
   setups.forEach(setup => {
     if (setup.tradeduration < config.shortDurationThreshold) {
-      groups[SetupGroupType.SHORT_DURATION].push(setup);
+      groups[SetupGroupType.SHORT_DURATION]!.push(setup);
     } else if (setup.tradeduration >= config.longDurationThreshold) {
-      groups[SetupGroupType.LONG_DURATION].push(setup);
+      groups[SetupGroupType.LONG_DURATION]!.push(setup);
     } else {
-      groups[SetupGroupType.MEDIUM_DURATION].push(setup);
+      groups[SetupGroupType.MEDIUM_DURATION]!.push(setup);
     }
   });
 
@@ -238,8 +238,8 @@ const groupByTradeDuration = (
 const groupByCombinedCharacteristics = (
   setups: MergedData[], 
   config: GroupingConfig = defaultConfig
-): Record<SetupGroupType, MergedData[]> => {
-  const groups: Record<SetupGroupType, MergedData[]> = {
+): Partial<Record<SetupGroupType, MergedData[]>> => {
+  const groups: Partial<Record<SetupGroupType, MergedData[]>> = {
     [SetupGroupType.BREAKOUT_HIGH_RR]: [],
     [SetupGroupType.BREAKOUT_BALANCED_RR]: [],
     [SetupGroupType.LIMIT_ENTRY_HIGH_RR]: [],
@@ -249,7 +249,7 @@ const groupByCombinedCharacteristics = (
     [SetupGroupType.SCALPING_STYLE]: [],
     [SetupGroupType.DAY_TRADING_STYLE]: [],
     [SetupGroupType.SWING_TRADING_STYLE]: [],
-  } as Record<SetupGroupType, MergedData[]>;
+  };
 
   setups.forEach(setup => {
     const isBreakout = isBuyStop(setup);
@@ -265,33 +265,33 @@ const groupByCombinedCharacteristics = (
 
     // Combined groups
     if (isBreakout && isHighRR) {
-      groups[SetupGroupType.BREAKOUT_HIGH_RR].push(setup);
+      groups[SetupGroupType.BREAKOUT_HIGH_RR]!.push(setup);
     }
     if (isBreakout && isBalancedRR) {
-      groups[SetupGroupType.BREAKOUT_BALANCED_RR].push(setup);
+      groups[SetupGroupType.BREAKOUT_BALANCED_RR]!.push(setup);
     }
     if (isLimitEntry && isHighRR) {
-      groups[SetupGroupType.LIMIT_ENTRY_HIGH_RR].push(setup);
+      groups[SetupGroupType.LIMIT_ENTRY_HIGH_RR]!.push(setup);
     }
     if (isLimitEntry && isBalancedRR) {
-      groups[SetupGroupType.LIMIT_ENTRY_BALANCED_RR].push(setup);
+      groups[SetupGroupType.LIMIT_ENTRY_BALANCED_RR]!.push(setup);
     }
     if (isTightStop && isHighRR) {
-      groups[SetupGroupType.TIGHT_STOP_HIGH_RR].push(setup);
+      groups[SetupGroupType.TIGHT_STOP_HIGH_RR]!.push(setup);
     }
     if (isWideStop && isBalancedRR) {
-      groups[SetupGroupType.WIDE_STOP_BALANCED_RR].push(setup);
+      groups[SetupGroupType.WIDE_STOP_BALANCED_RR]!.push(setup);
     }
 
     // Trade style groups
     if (isTightStop && isSmallTarget && isShortDuration) {
-      groups[SetupGroupType.SCALPING_STYLE].push(setup);
+      groups[SetupGroupType.SCALPING_STYLE]!.push(setup);
     }
     if (isShortDuration && !isLongDuration) {
-      groups[SetupGroupType.DAY_TRADING_STYLE].push(setup);
+      groups[SetupGroupType.DAY_TRADING_STYLE]!.push(setup);
     }
     if (isLongDuration) {
-      groups[SetupGroupType.SWING_TRADING_STYLE].push(setup);
+      groups[SetupGroupType.SWING_TRADING_STYLE]!.push(setup);
     }
   });
 
@@ -304,7 +304,7 @@ const groupByCombinedCharacteristics = (
 export const groupSetups = (
   setups: MergedData[], 
   config: GroupingConfig = defaultConfig
-): Record<SetupGroupType, MergedData[]> => {
+): Partial<Record<SetupGroupType, MergedData[]>> => {
   return {
     ...groupByEntryStrategy(setups),
     ...groupByRiskReward(setups, config),
