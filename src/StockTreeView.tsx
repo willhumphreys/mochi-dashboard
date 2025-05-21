@@ -3,6 +3,7 @@ import {useEffect, useState} from "react";
 import Papa from "papaparse";
 import {AggregatedSummaryRow, FilteredSetupRow, MergedData} from "./types";
 import {fetchStockSymbols, getDirectS3Url, getS3ImageUrl} from "./services/S3Service";
+import setupGroupService, { SetupGroupType, getSetupGroupDescriptions } from "./services/SetupGroupService";
 
 interface StockTreeViewProps {
     onRowSelect: (row: MergedData) => void;
@@ -13,6 +14,8 @@ interface StockData {
     symbol: string;
     isExpanded: boolean;
     data: MergedData[];
+    groupedData: Record<SetupGroupType, MergedData[]>;
+    expandedGroups: SetupGroupType[];
     isLoading: boolean;
     error: string | null;
 }
@@ -22,6 +25,17 @@ const StockTreeView = ({onRowSelect, onSymbolSelect}: StockTreeViewProps) => {
     const [isLoadingSymbols, setIsLoadingSymbols] = useState(true);
     const [symbolsError, setSymbolsError] = useState<string | null>(null);
     const [selectedSymbol, setSelectedSymbol] = useState<string | null>(null);
+    const [groupDescriptions, setGroupDescriptions] = useState<Record<string, string>>({});
+
+    // Initialize group descriptions
+    useEffect(() => {
+        const descriptions = getSetupGroupDescriptions();
+        const descMap: Record<string, string> = {};
+        descriptions.forEach(desc => {
+            descMap[desc.type] = desc.description;
+        });
+        setGroupDescriptions(descMap);
+    }, []);
 
     useEffect(() => {
         // Fetch available stock symbols from S3 bucket using the service
@@ -43,7 +57,13 @@ const StockTreeView = ({onRowSelect, onSymbolSelect}: StockTreeViewProps) => {
                 const initialStocksData: Record<string, StockData> = {};
                 stockSymbols.forEach(symbol => {
                     initialStocksData[symbol] = {
-                        symbol, isExpanded: false, data: [], isLoading: false, error: null
+                        symbol, 
+                        isExpanded: false, 
+                        data: [], 
+                        groupedData: {} as Record<SetupGroupType, MergedData[]>,
+                        expandedGroups: [],
+                        isLoading: false, 
+                        error: null
                     };
                 });
 
@@ -88,6 +108,26 @@ const StockTreeView = ({onRowSelect, onSymbolSelect}: StockTreeViewProps) => {
         if (!stocksData[symbol].isExpanded && stocksData[symbol].data.length === 0) {
             await loadStockData(symbol);
         }
+    };
+
+    const toggleGroup = (symbol: string, groupType: SetupGroupType) => {
+        setStocksData(prevData => {
+            const symbolData = prevData[symbol];
+            const isGroupExpanded = symbolData.expandedGroups.includes(groupType);
+
+            // Toggle group expansion by adding or removing from expandedGroups array
+            const updatedExpandedGroups = isGroupExpanded
+                ? symbolData.expandedGroups.filter(g => g !== groupType)
+                : [...symbolData.expandedGroups, groupType];
+
+            return {
+                ...prevData,
+                [symbol]: {
+                    ...symbolData,
+                    expandedGroups: updatedExpandedGroups
+                }
+            };
+        });
     };
 
 
@@ -223,10 +263,16 @@ const StockTreeView = ({onRowSelect, onSymbolSelect}: StockTreeViewProps) => {
                 } as MergedData;
             });
 
-            // Update state with the loaded data
+            // Group the setups by different criteria
+            const groupedSetups = setupGroupService.groupSetups(mergedData);
+
+            // Update state with the loaded data and grouped setups
             setStocksData(prevData => ({
                 ...prevData, [symbol]: {
-                    ...prevData[symbol], isLoading: false, data: mergedData,
+                    ...prevData[symbol], 
+                    isLoading: false, 
+                    data: mergedData,
+                    groupedData: groupedSetups
                 }
             }));
 
@@ -234,7 +280,11 @@ const StockTreeView = ({onRowSelect, onSymbolSelect}: StockTreeViewProps) => {
             console.error(`Error loading data for ${symbol}:`, error);
             setStocksData(prevData => ({
                 ...prevData, [symbol]: {
-                    ...prevData[symbol], isLoading: false, error: error instanceof Error ? error.message : String(error)
+                    ...prevData[symbol], 
+                    isLoading: false, 
+                    error: error instanceof Error ? error.message : String(error),
+                    groupedData: {} as Record<SetupGroupType, MergedData[]>,
+                    expandedGroups: []
                 }
             }));
         }
@@ -281,16 +331,48 @@ const StockTreeView = ({onRowSelect, onSymbolSelect}: StockTreeViewProps) => {
                                 ) : stocksData[symbol].data.length === 0 ? (
                                     <div className="status-message">No data available for {symbol}</div>
                                 ) : (
-                                    <div className="scenarios-container">
-                                        {stocksData[symbol].data.map((row, index) => (
-                                            <div
-                                                key={index}
-                                                onClick={() => onRowSelect(row)}
-                                                className="scenario-item"
-                                            >
-                                                {row.Scenario} (Rank: {row.Rank})
-                                            </div>
-                                        ))}
+                                    <div className="groups-container">
+                                        {/* Display setup groups */}
+                                        {Object.entries(stocksData[symbol].groupedData).map(([groupTypeStr, setups]) => {
+                                            // Skip empty groups
+                                            if (setups.length === 0) return null;
+
+                                            const groupType = groupTypeStr as SetupGroupType;
+                                            const isGroupExpanded = stocksData[symbol].expandedGroups.includes(groupType);
+
+                                            return (
+                                                <div key={groupTypeStr} className="setup-group">
+                                                    <div 
+                                                        className="group-header"
+                                                        onClick={() => toggleGroup(symbol, groupType)}
+                                                    >
+                                                        <span className="toggle-icon">
+                                                            {isGroupExpanded ? '▼' : '▶'}
+                                                        </span>
+                                                        <span 
+                                                            className="group-name"
+                                                            title={groupDescriptions[groupType] || ""}
+                                                        >
+                                                            {groupType} ({setups.length})
+                                                        </span>
+                                                    </div>
+
+                                                    {isGroupExpanded && (
+                                                        <div className="group-setups">
+                                                            {setups.map((setup, index) => (
+                                                                <div
+                                                                    key={index}
+                                                                    onClick={() => onRowSelect(setup)}
+                                                                    className="scenario-item"
+                                                                >
+                                                                    {setup.Scenario} (Rank: {setup.Rank})
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            );
+                                        })}
                                     </div>
                                 )}
                             </div>

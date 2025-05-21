@@ -1794,3 +1794,63 @@ select option {
   border-top: none;
   border-radius: 0 0 4px 4px;
 }
+/* Setup Group Styles */
+.groups-container {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 10px;
+  padding-left: 15px;
+}
+
+.setup-group {
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  overflow: hidden;
+  background-color: #f9f9f9;
+}
+
+.group-header {
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
+  background-color: #f0f0f0;
+  cursor: pointer;
+  user-select: none;
+  transition: background-color 0.2s;
+}
+
+.group-header:hover {
+  background-color: #e0e0e0;
+}
+
+.group-name {
+  margin-left: 8px;
+  font-weight: 500;
+}
+
+.group-setups {
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.scenario-item {
+  padding: 6px 10px;
+  border-radius: 3px;
+  background-color: #fff;
+  border: 1px solid #eee;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.scenario-item:hover {
+  background-color: #f0f8ff;
+}
+
+.toggle-icon {
+  display: inline-block;
+  width: 16px;
+  text-align: center;
+}
