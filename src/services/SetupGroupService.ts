@@ -33,6 +33,20 @@ export enum SetupGroupType {
   BUY_STOP_WIDE_STOP = "Buy Stop - Wide Stop Setups",
   BUY_LIMIT_WIDE_STOP = "Buy Limit - Wide Stop Setups",
 
+  // Tick Offset Size
+  BUY_STOP_SMALL_TICKOFFSET = "Buy Stop - Small Tick Offset Setups",
+  BUY_LIMIT_SMALL_TICKOFFSET = "Buy Limit - Small Tick Offset Setups",
+
+  BUY_STOP_MEDIUM_TICKOFFSET = "Buy Stop - Medium Tick Offset Setups",
+  BUY_LIMIT_MEDIUM_TICKOFFSET = "Buy Limit - Medium Tick Offset Setups",
+
+  BUY_STOP_LARGE_TICKOFFSET = "Buy Stop - Large Tick Offset Setups",
+  BUY_LIMIT_LARGE_TICKOFFSET = "Buy Limit - Large Tick Offset Setups",
+
+  // Combined Tick Offset and Stop
+  BUY_STOP_LARGE_TICKOFFSET_TIGHT_STOP = "Buy Stop - Large Tick Offset - Tight Stop Setups",
+  BUY_LIMIT_LARGE_TICKOFFSET_TIGHT_STOP = "Buy Limit - Large Tick Offset - Tight Stop Setups",
+
   // Potential Profit Magnitude (Fixed Limit Distance)
   BUY_STOP_SMALL_TARGET = "Buy Stop - Small Target Setups",
   BUY_LIMIT_SMALL_TARGET = "Buy Limit - Small Target Setups",
@@ -277,6 +291,107 @@ const groupByStopDistance = (
 };
 
 /**
+ * Groups setups by tick offset size
+ * Uses dynamic thresholds based on the actual data:
+ * - Bottom 25% of setups are classified as small tick offset
+ * - Top 25% of setups are classified as large tick offset
+ * - Middle 50% of setups are classified as medium tick offset
+ * - Also identifies setups with large tick offset and tight stop
+ */
+const groupByTickOffset = (
+  setups: MergedData[]
+): Partial<Record<SetupGroupType, MergedData[]>> => {
+  const groups: Partial<Record<SetupGroupType, MergedData[]>> = {
+    [SetupGroupType.BUY_STOP_SMALL_TICKOFFSET]: [],
+    [SetupGroupType.BUY_LIMIT_SMALL_TICKOFFSET]: [],
+
+    [SetupGroupType.BUY_STOP_MEDIUM_TICKOFFSET]: [],
+    [SetupGroupType.BUY_LIMIT_MEDIUM_TICKOFFSET]: [],
+
+    [SetupGroupType.BUY_STOP_LARGE_TICKOFFSET]: [],
+    [SetupGroupType.BUY_LIMIT_LARGE_TICKOFFSET]: [],
+
+    [SetupGroupType.BUY_STOP_LARGE_TICKOFFSET_TIGHT_STOP]: [],
+    [SetupGroupType.BUY_LIMIT_LARGE_TICKOFFSET_TIGHT_STOP]: [],
+  };
+
+  // If no setups, return empty groups
+  if (setups.length === 0) {
+    return groups;
+  }
+
+  // Extract tick offsets and sort them (separately for buy stop and buy limit)
+  const buyStopTickOffsets = setups
+    .filter(setup => setup.tickoffset > 0)
+    .map(setup => setup.tickoffset)
+    .sort((a, b) => a - b);
+
+  const buyLimitTickOffsets = setups
+    .filter(setup => setup.tickoffset < 0)
+    .map(setup => Math.abs(setup.tickoffset))
+    .sort((a, b) => a - b);
+
+  // Calculate the 25th and 75th percentile thresholds for buy stop
+  let smallBuyStopThreshold = 0;
+  let largeBuyStopThreshold = 0;
+  if (buyStopTickOffsets.length > 0) {
+    smallBuyStopThreshold = buyStopTickOffsets[Math.floor(buyStopTickOffsets.length * 0.25)];
+    largeBuyStopThreshold = buyStopTickOffsets[Math.floor(buyStopTickOffsets.length * 0.75)];
+  }
+
+  // Calculate the 25th and 75th percentile thresholds for buy limit
+  let smallBuyLimitThreshold = 0;
+  let largeBuyLimitThreshold = 0;
+  if (buyLimitTickOffsets.length > 0) {
+    smallBuyLimitThreshold = buyLimitTickOffsets[Math.floor(buyLimitTickOffsets.length * 0.25)];
+    largeBuyLimitThreshold = buyLimitTickOffsets[Math.floor(buyLimitTickOffsets.length * 0.75)];
+  }
+
+  // Extract stop distances and sort them for tight stop identification
+  const stopDistances = setups.map(setup => Math.abs(setup.stop)).sort((a, b) => a - b);
+  let tightStopThreshold = 0;
+  if (stopDistances.length > 0) {
+    tightStopThreshold = stopDistances[Math.floor(stopDistances.length * 0.25)];
+  }
+
+  // Use these dynamic thresholds to classify setups
+  setups.forEach(setup => {
+    if (setup.tickoffset > 0) {
+      // Buy Stop setups
+      if (setup.tickoffset <= smallBuyStopThreshold) {
+        groups[SetupGroupType.BUY_STOP_SMALL_TICKOFFSET]!.push(setup);
+      } else if (setup.tickoffset >= largeBuyStopThreshold) {
+        groups[SetupGroupType.BUY_STOP_LARGE_TICKOFFSET]!.push(setup);
+
+        // Check if this is also a tight stop setup
+        if (Math.abs(setup.stop) <= tightStopThreshold) {
+          groups[SetupGroupType.BUY_STOP_LARGE_TICKOFFSET_TIGHT_STOP]!.push(setup);
+        }
+      } else {
+        groups[SetupGroupType.BUY_STOP_MEDIUM_TICKOFFSET]!.push(setup);
+      }
+    } else if (setup.tickoffset < 0) {
+      // Buy Limit setups
+      const absTickOffset = Math.abs(setup.tickoffset);
+      if (absTickOffset <= smallBuyLimitThreshold) {
+        groups[SetupGroupType.BUY_LIMIT_SMALL_TICKOFFSET]!.push(setup);
+      } else if (absTickOffset >= largeBuyLimitThreshold) {
+        groups[SetupGroupType.BUY_LIMIT_LARGE_TICKOFFSET]!.push(setup);
+
+        // Check if this is also a tight stop setup
+        if (Math.abs(setup.stop) <= tightStopThreshold) {
+          groups[SetupGroupType.BUY_LIMIT_LARGE_TICKOFFSET_TIGHT_STOP]!.push(setup);
+        }
+      } else {
+        groups[SetupGroupType.BUY_LIMIT_MEDIUM_TICKOFFSET]!.push(setup);
+      }
+    }
+  });
+
+  return groups;
+};
+
+/**
  * Groups setups by limit distance (target size)
  * Uses dynamic thresholds based on the actual data:
  * - Bottom 25% of setups are classified as small target
@@ -513,6 +628,7 @@ export const groupSetups = (
     ...groupByEntryStrategy(setups),
     ...groupByRiskReward(setups, config),
     ...groupByStopDistance(setups),
+    ...groupByTickOffset(setups),
     ...groupByLimitDistance(setups),
     ...groupByTradeDuration(setups, config),
     ...groupByCombinedCharacteristics(setups, config),
@@ -550,6 +666,19 @@ export const setupGroupHierarchy: Record<SetupGroupType, SetupGroupType | null> 
 
   [SetupGroupType.BUY_STOP_WIDE_STOP]: SetupGroupType.BUY_STOP,
   [SetupGroupType.BUY_LIMIT_WIDE_STOP]: SetupGroupType.BUY_LIMIT,
+
+  // Tick Offset Size groups
+  [SetupGroupType.BUY_STOP_SMALL_TICKOFFSET]: SetupGroupType.BUY_STOP,
+  [SetupGroupType.BUY_LIMIT_SMALL_TICKOFFSET]: SetupGroupType.BUY_LIMIT,
+
+  [SetupGroupType.BUY_STOP_MEDIUM_TICKOFFSET]: SetupGroupType.BUY_STOP,
+  [SetupGroupType.BUY_LIMIT_MEDIUM_TICKOFFSET]: SetupGroupType.BUY_LIMIT,
+
+  [SetupGroupType.BUY_STOP_LARGE_TICKOFFSET]: SetupGroupType.BUY_STOP,
+  [SetupGroupType.BUY_LIMIT_LARGE_TICKOFFSET]: SetupGroupType.BUY_LIMIT,
+
+  [SetupGroupType.BUY_STOP_LARGE_TICKOFFSET_TIGHT_STOP]: SetupGroupType.BUY_STOP,
+  [SetupGroupType.BUY_LIMIT_LARGE_TICKOFFSET_TIGHT_STOP]: SetupGroupType.BUY_LIMIT,
 
   // Target Size groups
   [SetupGroupType.BUY_STOP_SMALL_TARGET]: SetupGroupType.BUY_STOP,
@@ -827,6 +956,48 @@ export const getSetupGroupDescriptions = (): { type: SetupGroupType; name: strin
       type: SetupGroupType.BUY_LIMIT_WIDE_STOP,
       name: "Buy Limit - Wide Stop Setups",
       description: "Negative tick offset with stop-loss in the top 25% of all setups. The market needs to come down to open the position."
+    },
+
+    // Tick Offset Size groups
+    {
+      type: SetupGroupType.BUY_STOP_SMALL_TICKOFFSET,
+      name: "Buy Stop - Small Tick Offset Setups",
+      description: "Positive tick offset in the bottom 25% of all buy stop setups. Smaller distance to entry price."
+    },
+    {
+      type: SetupGroupType.BUY_LIMIT_SMALL_TICKOFFSET,
+      name: "Buy Limit - Small Tick Offset Setups",
+      description: "Negative tick offset in the bottom 25% of all buy limit setups. Smaller distance to entry price."
+    },
+    {
+      type: SetupGroupType.BUY_STOP_MEDIUM_TICKOFFSET,
+      name: "Buy Stop - Medium Tick Offset Setups",
+      description: "Positive tick offset in the middle 50% of all buy stop setups. Medium distance to entry price."
+    },
+    {
+      type: SetupGroupType.BUY_LIMIT_MEDIUM_TICKOFFSET,
+      name: "Buy Limit - Medium Tick Offset Setups",
+      description: "Negative tick offset in the middle 50% of all buy limit setups. Medium distance to entry price."
+    },
+    {
+      type: SetupGroupType.BUY_STOP_LARGE_TICKOFFSET,
+      name: "Buy Stop - Large Tick Offset Setups",
+      description: "Positive tick offset in the top 25% of all buy stop setups. Larger distance to entry price."
+    },
+    {
+      type: SetupGroupType.BUY_LIMIT_LARGE_TICKOFFSET,
+      name: "Buy Limit - Large Tick Offset Setups",
+      description: "Negative tick offset in the top 25% of all buy limit setups. Larger distance to entry price."
+    },
+    {
+      type: SetupGroupType.BUY_STOP_LARGE_TICKOFFSET_TIGHT_STOP,
+      name: "Buy Stop - Large Tick Offset - Tight Stop Setups",
+      description: "Positive tick offset in the top 25% with stop-loss in the bottom 25%. Large entry distance with tight stop."
+    },
+    {
+      type: SetupGroupType.BUY_LIMIT_LARGE_TICKOFFSET_TIGHT_STOP,
+      name: "Buy Limit - Large Tick Offset - Tight Stop Setups",
+      description: "Negative tick offset in the top 25% with stop-loss in the bottom 25%. Large entry distance with tight stop."
     },
 
     // Target Size groups
