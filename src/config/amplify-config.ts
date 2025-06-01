@@ -13,10 +13,12 @@ const amplifyConfig: ResourcesConfig = {
                     scopes: ['email', 'profile', 'openid'],
                     redirectSignIn: [
                         'https://master.d37eokvg7j9het.amplifyapp.com',
+                        'https://dashboard.minoko.life',
                         'http://localhost:5173'
                     ],
                     redirectSignOut: [
                         'https://master.d37eokvg7j9het.amplifyapp.com',
+                        'https://dashboard.minoko.life',
                         'http://localhost:5173'
                     ],
                     responseType: 'code'
