@@ -232,3 +232,18 @@ export interface SecFiling {
     filingDate: string; // Date of the filing (e.g., "2024-12-31")
     positions: SecPosition[]; // Array of positions in the filing
 }
+
+/**
+ * Interface for backtest metadata stored in S3
+ */
+export interface BacktestMetadata {
+    ticker: string;
+    from_date: string;
+    to_date: string;
+    short_atr_period: number;
+    long_atr_period: number;
+    alpha: number;
+    group_tag: string;
+    timestamp: string;
+    weightingAtr: number;
+}

@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
-import { MergedData, TraderConfigDetails } from "./types";
-import { getS3ImageUrl, getDirectS3Url } from "./services/S3Service";
+import { MergedData, TraderConfigDetails, BacktestMetadata } from "./types";
+import { getS3ImageUrl, getDirectS3Url, fetchBacktestMetadata } from "./services/S3Service";
 import { TradesTable2 } from "./TradesTable2";
 
 // Add to imports
@@ -16,8 +16,10 @@ const StrategyVisualization = (
     const [tradesUrl, setTradesUrl] = useState<string | null>(null);
     const [loading, setLoading] = useState<boolean>(false);
     const [error, setError] = useState<string | null>(null);
+    const [imageError, setImageError] = useState<string | null>(null);
     const [usedDirectUrl, setUsedDirectUrl] = useState<boolean>(false);
     const [copySuccess, setCopySuccess] = useState(false);
+    const [backtestMetadata, setBacktestMetadata] = useState<BacktestMetadata | null>(null);
 
     // Define key construction functions using useCallback
     const constructGraphS3Key = useCallback((strategy: MergedData): string | null => {
@@ -119,22 +121,47 @@ const StrategyVisualization = (
         }
     };
 
+    // Helper function to extract metadata key from scenario
+    const extractMetadataKey = (scenario: string): string | null => {
+        // The metadata key is the part before the first "___" in the scenario
+        const match = scenario.match(/^([^_]+(?:-{2}[^_]+)?)/);
+        return match ? match[1] : null;
+    };
+
     useEffect(() => {
         // Reset state when strategy changes
         setImageUrl(null);
         setTradesUrl(null);
         setLoading(false);
         setError(null);
+        setImageError(null);
         setUsedDirectUrl(false);
+        setBacktestMetadata(null);
 
         if (!selectedStrategy) {
             return;
         }
 
+        // Extract metadata key from scenario
+        const metadataKey = extractMetadataKey(selectedStrategy.Scenario);
+        if (metadataKey) {
+            // Fetch metadata
+            fetchBacktestMetadata(metadataKey)
+                .then(metadata => {
+                    setBacktestMetadata(metadata);
+                })
+                .catch(err => {
+                    console.error("Failed to fetch backtest metadata:", err);
+                    setError(err instanceof Error ? err.message : "Failed to fetch backtest metadata");
+                });
+        } else {
+            setError("Backtest metadata must be available: No metadata key found in scenario");
+        }
+
         const loadData = async () => {
             try {
                 setLoading(true);
-                setError(null);
+                // Don't clear the error if it's related to metadata
 
                 // Load graph image
                 const graphKey = constructGraphS3Key(selectedStrategy);
@@ -151,6 +178,7 @@ const StrategyVisualization = (
                         const directUrl = getDirectS3Url(graphKey);
                         setImageUrl(directUrl);
                         setUsedDirectUrl(true);
+                        setImageError("Failed to get pre-signed URL. Using direct URL instead.");
                     }
                 }
 
@@ -168,11 +196,12 @@ const StrategyVisualization = (
                         console.log("Falling back to direct S3 URL for trades...");
                         const directUrl = getDirectS3Url(tradesKey);
                         setTradesUrl(directUrl);
+                        setImageError("Failed to get pre-signed URL for trades. Using direct URL instead.");
                     }
                 }
             } catch (err) {
                 console.error("Failed to load strategy data:", err);
-                setError(err instanceof Error ? err.message : "Unknown error");
+                setImageError(err instanceof Error ? err.message : "Unknown error");
             } finally {
                 setLoading(false);
             }
@@ -230,6 +259,10 @@ const StrategyVisualization = (
     return (
         <div className="strategy-visualization">
             <h3>Strategy {selectedStrategy.Scenario} (Trader {selectedStrategy.TraderID})</h3>
+
+            {error && <div className="error-message" style={{ color: 'red', padding: '10px', margin: '10px 0', backgroundColor: '#ffeeee', border: '1px solid red', borderRadius: '4px' }}>
+                {error}
+            </div>}
 
             <div className="strategy-tables-container">
                 {/* Basic Information */}
@@ -523,12 +556,45 @@ const StrategyVisualization = (
                         </tbody>
                     </table>
                 </div>
+
+                {/* Backtest Metadata */}
+                {backtestMetadata && (
+                    <div className="strategy-table-section">
+                        <h4>Backtest Metadata</h4>
+                        <table className="strategy-data-table">
+                            <tbody>
+                            <tr>
+                                <th>Ticker</th>
+                                <td>{backtestMetadata.ticker}</td>
+                                <th>Date Range</th>
+                                <td>{backtestMetadata.from_date} to {backtestMetadata.to_date}</td>
+                            </tr>
+                            <tr>
+                                <th>Short ATR Period</th>
+                                <td>{backtestMetadata.short_atr_period}</td>
+                                <th>Long ATR Period</th>
+                                <td>{backtestMetadata.long_atr_period}</td>
+                            </tr>
+                            <tr>
+                                <th>Alpha</th>
+                                <td>{backtestMetadata.alpha}</td>
+                                <th>Weighting ATR</th>
+                                <td>{backtestMetadata.weightingAtr}</td>
+                            </tr>
+                            <tr>
+                                <th>Group Tag</th>
+                                <td colSpan={3}>{backtestMetadata.group_tag}</td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                )}
             </div>
 
             {/* Strategy Image */}
             <div className="strategy-image-container">
                 {loading && <div className="loading-spinner">Loading strategy image...</div>}
-                {error && <div className="error-message">Error loading image: {error}</div>}
+                {imageError && <div className="error-message">Error loading image: {imageError}</div>}
                 {imageUrl && !loading && (
                     <div>
                         <h4>Strategy Visualization</h4>

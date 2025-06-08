@@ -9,7 +9,7 @@ import {fromCognitoIdentityPool} from "@aws-sdk/credential-providers";
 import {fetchAuthSession} from 'aws-amplify/auth';
 import Papa from "papaparse";
 import type {AwsCredentialIdentity} from "@aws-sdk/types";
-import {TradeData} from "../types.ts";
+import {TradeData, BacktestMetadata} from "../types.ts";
 import {getSignedUrl} from "@aws-sdk/s3-request-presigner";
 
 // Region and Pool IDs from environment variables
@@ -905,4 +905,57 @@ export const updateCsvInS3 = async (
     }
 };
 
-export {s3Client, LIVE_TRADES_BUCKET_NAME};
+// Bucket name for backtest parameters
+const BACKTEST_PARAMS_BUCKET_NAME = "mochi-prod-backtest-params";
+
+// Cache for backtest metadata to avoid redundant fetches
+const backtestMetadataCache: Record<string, BacktestMetadata> = {};
+
+/**
+ * Fetches backtest metadata from S3
+ * @param metadataKey - The unique identifier part of the metadata key (e.g., "apple-rabbit--20250607223952")
+ * @returns Promise that resolves to the backtest metadata
+ */
+export const fetchBacktestMetadata = async (metadataKey: string): Promise<BacktestMetadata> => {
+    try {
+        // Check if we already have this metadata in cache
+        if (backtestMetadataCache[metadataKey]) {
+            console.log(`Using cached metadata for key: ${metadataKey}`);
+            return backtestMetadataCache[metadataKey];
+        }
+
+        console.log(`Fetching backtest metadata for key: ${metadataKey}`);
+
+        // Construct the full S3 key
+        const s3Key = `${metadataKey}.json`;
+
+        // Create the command to get the object
+        const command = new GetObjectCommand({
+            Bucket: BACKTEST_PARAMS_BUCKET_NAME,
+            Key: s3Key
+        });
+
+        // Fetch the object from S3
+        const response = await s3Client.send(command);
+
+        if (!response.Body) {
+            throw new Error('Backtest metadata must be available: No content in S3 response');
+        }
+
+        // Convert the response body to text
+        const jsonContent = await response.Body.transformToString();
+
+        // Parse the JSON
+        const metadata = JSON.parse(jsonContent) as BacktestMetadata;
+
+        // Store in cache for future use
+        backtestMetadataCache[metadataKey] = metadata;
+
+        return metadata;
+    } catch (error) {
+        console.error(`Error fetching backtest metadata for key ${metadataKey}:`, error);
+        throw new Error(`Backtest metadata must be available: ${error instanceof Error ? error.message : String(error)}`);
+    }
+};
+
+export {s3Client, LIVE_TRADES_BUCKET_NAME, BACKTEST_PARAMS_BUCKET_NAME};
