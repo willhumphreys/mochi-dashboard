@@ -1621,6 +1621,20 @@ select option {
   margin-bottom: 20px;
 }
 
+.backtest-execution-params h3 {
+  margin-top: 20px;
+  margin-bottom: 15px;
+  font-size: 1.2em;
+}
+
+.manual-input {
+  margin-top: 10px;
+}
+
+.manual-input input {
+  width: 100%;
+}
+
 .preset-buttons {
   display: flex;
   flex-wrap: wrap;

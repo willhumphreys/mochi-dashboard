@@ -17,6 +17,7 @@ interface BacktestSuccessResponse {
 }
 
 import ScalingParamsSelector from './ScalingParamsSelector';
+import BacktestExecutionParams from './BacktestExecutionParams';
 
 
 
@@ -27,6 +28,11 @@ const BacktestRequest: React.FC = () => {
         shortATRPeriod: '',
         longATRPeriod: '',
         alpha: '',
+    });
+
+    const [executionParams, setExecutionParams] = useState({
+        tradeDuration: '24', // Default to 1 day
+        tradeTimeout: '4',   // Default to 4 hours
     });
 
 
@@ -68,6 +74,8 @@ const BacktestRequest: React.FC = () => {
         shortATRPeriod: parseInt(scalingParams.shortATRPeriod, 10),
         longATRPeriod: parseInt(scalingParams.longATRPeriod, 10),
         alpha: parseFloat(scalingParams.alpha),
+        tradeDuration: parseInt(executionParams.tradeDuration, 10),
+        tradeTimeout: parseInt(executionParams.tradeTimeout, 10),
     };
 
 
@@ -239,6 +247,11 @@ const BacktestRequest: React.FC = () => {
                 <ScalingParamsSelector
                     scalingParams={scalingParams}
                     setScalingParams={setScalingParams}
+                />
+
+                <BacktestExecutionParams
+                    executionParams={executionParams}
+                    setExecutionParams={setExecutionParams}
                 />
 
 
