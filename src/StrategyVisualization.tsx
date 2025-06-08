@@ -19,6 +19,7 @@ const StrategyVisualization = (
     const [imageError, setImageError] = useState<string | null>(null);
     const [usedDirectUrl, setUsedDirectUrl] = useState<boolean>(false);
     const [copySuccess, setCopySuccess] = useState(false);
+    const [copyAtrSetupSuccess, setCopyAtrSetupSuccess] = useState(false);
     const [backtestMetadata, setBacktestMetadata] = useState<BacktestMetadata | null>(null);
 
     // Define key construction functions using useCallback
@@ -81,6 +82,29 @@ const StrategyVisualization = (
                 setTimeout(() => setCopySuccess(false), 1500);
             } catch (err) {
                 console.error("Failed to copy setup value: ", err);
+            }
+        }
+    };
+
+    const getAtrSetupString = (): string => {
+        if (!selectedStrategy || !backtestMetadata) return "N/A";
+
+        const stopAtr = formatNumber(selectedStrategy.stop * backtestMetadata.weightingAtr, 0);
+        const limitAtr = formatNumber(selectedStrategy.limit * backtestMetadata.weightingAtr, 0);
+        const tickOffsetAtr = formatNumber(selectedStrategy.tickoffset * backtestMetadata.weightingAtr, 0);
+
+        return `${selectedStrategy.dayofweek},${selectedStrategy.hourofday},${stopAtr},${limitAtr},${tickOffsetAtr},${selectedStrategy.tradeduration},${selectedStrategy.outoftime}`;
+    };
+
+    const copyAtrSetupToClipboard = async () => {
+        const atrSetupString = getAtrSetupString();
+        if (atrSetupString !== "N/A") {
+            try {
+                await navigator.clipboard.writeText(atrSetupString);
+                setCopyAtrSetupSuccess(true);
+                setTimeout(() => setCopyAtrSetupSuccess(false), 1500);
+            } catch (err) {
+                console.error("Failed to copy ATR setup value: ", err);
             }
         }
     };
@@ -303,6 +327,29 @@ const StrategyVisualization = (
                                 </button>
                             </td>
                         </tr>
+                        {backtestMetadata && (
+                            <tr>
+                                <th>Setup with ATR</th>
+                                <td colSpan={3}>
+                                    {getAtrSetupString()}
+                                    <button
+                                        onClick={copyAtrSetupToClipboard}
+                                        className="copy-button"
+                                        title="Copy ATR setup value"
+                                        style={{
+                                            marginLeft: '8px',
+                                            background: 'none',
+                                            border: 'none',
+                                            cursor: 'pointer',
+                                            padding: '2px 6px',
+                                            borderRadius: '4px'
+                                        }}
+                                    >
+                                        {copyAtrSetupSuccess ? '✓' : '📋'}
+                                    </button>
+                                </td>
+                            </tr>
+                        )}
 
                         </tbody>
                     </table>
@@ -520,12 +567,28 @@ const StrategyVisualization = (
                             <th>Limit</th>
                             <td>{selectedStrategy.limit}</td>
                         </tr>
+                        {backtestMetadata && (
+                            <tr>
+                                <th>Stop × ATR</th>
+                                <td>{formatNumber(selectedStrategy.stop * backtestMetadata.weightingAtr, 0)}</td>
+                                <th>Limit × ATR</th>
+                                <td>{formatNumber(selectedStrategy.limit * backtestMetadata.weightingAtr, 0)}</td>
+                            </tr>
+                        )}
                         <tr>
                             <th>Tick Offset</th>
                             <td>{selectedStrategy.tickoffset}</td>
                             <th>Trade Duration</th>
                             <td>{selectedStrategy.tradeduration}</td>
                         </tr>
+                        {backtestMetadata && (
+                            <tr>
+                                <th>Tick Offset × ATR</th>
+                                <td>{formatNumber(selectedStrategy.tickoffset * backtestMetadata.weightingAtr, 0)}</td>
+                                <th></th>
+                                <td></td>
+                            </tr>
+                        )}
                         <tr>
                             <th>Out of Time</th>
                             <td>{selectedStrategy.outoftime}</td>
